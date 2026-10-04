@@ -1,0 +1,24 @@
+# Web API
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pydantic-settings>=2.3
+sqlalchemy>=2.0
+
+# Scraping (no AI)
+httpx>=0.27
+feedparser>=6.0
+trafilatura>=1.12
+websockets>=12.0
+apscheduler>=3.10,<4
+
+# AI analysis and search
+google-genai>=1.30
+anthropic>=0.40
+numpy>=1.26
+
+# Optional: Media Cloud news archive (needs a free API key)
+mediacloud>=4.0
+
+# Tests
+pytest>=8.0
