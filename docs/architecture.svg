@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1860 2360" role="img" aria-labelledby="title desc">
+  <title id="title">SitewellEco&#178; architecture</title>
+  <desc id="desc">Product path: site engineer, React and Mapbox, FastAPI, workspaces. ML path: 35 open datasets and research CSVs join to county FIPS, feature store of 3109 counties, multi-criteria decision analysis with weighted geometric mean and veto, then robustness, sanity, and trade-off checks. Awareness path: public sources, Gemini sentiment, community re-rank.</desc>
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ececec" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.2 L 9 5 L 0 8.8 z" fill="#111"/>
+    </marker>
+    <style type="text/css">
+      .label { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 600; fill: #111; }
+      .sub { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 17px; font-weight: 400; fill: #555; }
+      .edge { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 17px; font-weight: 400; fill: #333; stroke: #fafafa; stroke-width: 8px; paint-order: stroke fill; }
+      .gemini { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 600; fill: #4b6cb7; }
+      .wire { fill: none; stroke: #111; stroke-width: 1.35; }
+      .ico { fill: none; stroke: #111; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+      .panel { fill: #fff; stroke: #cfcfcf; stroke-width: 1.4; }
+      .eqbox { fill: #f3f5f8; stroke: #c5cdd8; stroke-width: 1.2; }
+      .item { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 400; fill: #333; }
+      .math { font-family: "Times New Roman", Times, Georgia, serif; fill: #111; }
+    </style>
+  </defs>
+
+  <rect width="1860" height="2360" fill="#fafafa"/>
+  <rect width="1860" height="2360" fill="url(#grid)"/>
+
+  <!-- Lanes: x=100 user, x=280 sentiment, x=430 open-join, x=470 research-join,
+       x=1260 POST /rank, x=1480 ranked sites, x=1580 pulse, x=1720 community-features,
+       y=36 re-rank, y=150 app, y=250 infer, y=480 ML spine, y=700 validation,
+       y=960 gemini, y=1020 sentiment, y=1180 awareness. Labels sit in the gaps, not on strokes. -->
+
+  <path class="wire" d="M100 760 V150 H268" marker-end="url(#arrow)"/>
+  <path class="wire" d="M334 150 H508" marker-end="url(#arrow)"/>
+  <path class="wire" d="M1740 928 V36 H572" marker-end="url(#arrow)"/>
+  <path class="wire" d="M540 184 V250 H1260 V448" marker-end="url(#arrow)"/>
+  <path class="wire" d="M310 360 H430 V458 H528" marker-end="url(#arrow)"/>
+  <path class="wire" d="M310 640 H470 V502 H528" marker-end="url(#arrow)"/>
+  <path class="wire" d="M594 480 H868" marker-end="url(#arrow)"/>
+  <path class="wire" d="M932 480 H1228" marker-end="url(#arrow)"/>
+  <path class="wire" d="M1300 480 H1480 V150 H1548" marker-end="url(#arrow)"/>
+  <path class="wire" d="M1260 630 V700"/>
+  <path class="wire" d="M1080 700 H1440"/>
+  <path class="wire" d="M1080 700 V748" marker-end="url(#arrow)"/>
+  <path class="wire" d="M1260 700 V748" marker-end="url(#arrow)"/>
+  <path class="wire" d="M1440 700 V748" marker-end="url(#arrow)"/>
+  <path class="wire" d="M800 960 H1710" marker-end="url(#arrow)"/>
+  <path class="wire" d="M280 1180 V1020 H720 V960 H728" marker-end="url(#arrow)"/>
+  <path class="wire" d="M270 1180 H528" marker-end="url(#arrow)"/>
+  <path class="wire" d="M594 1180 H868" marker-end="url(#arrow)"/>
+  <path class="wire" d="M932 1180 H1548" marker-end="url(#arrow)"/>
+  <path class="wire" d="M1580 1148 V184" marker-end="url(#arrow)"/>
+
+  <text class="edge" x="1140" y="64" text-anchor="middle">community features + re-rank</text>
+  <text class="edge" x="620" y="288">POST /rank  {n, weights}</text>
+  <text class="edge" x="1464" y="330" text-anchor="end">ranked sites</text>
+  <text class="edge" x="1596" y="330">pulse</text>
+  <text class="edge" x="730" y="438" text-anchor="middle">join</text>
+  <text class="edge" x="1080" y="438" text-anchor="middle">score</text>
+  <text class="edge" x="500" y="986" text-anchor="middle">public sentiment</text>
+  <text class="edge" x="730" y="1140" text-anchor="middle">raw items</text>
+  <text class="edge" x="1240" y="1140" text-anchor="middle">vectors</text>
+  <text class="edge" x="260" y="292" text-anchor="middle">ML pipeline</text>
+  <text class="edge" x="40" y="1104">Community awareness</text>
+
+  <g transform="translate(100 800)" class="ico">
+    <circle cx="0" cy="-20" r="8.5"/>
+    <path d="M-16 20 v-3 a9 9 0 0 1 9-9 h14 a9 9 0 0 1 9 9 v3"/>
+    <text class="label" x="0" y="48" text-anchor="middle">Site engineer /</text>
+    <text class="label" x="0" y="74" text-anchor="middle">real estate developer</text>
+  </g>
+
+  <g transform="translate(300 150)">
+    <text class="label" x="0" y="-56" text-anchor="middle">SitewellEco&#178;</text>
+    <text class="sub" x="0" y="-32" text-anchor="middle">React + Mapbox</text>
+    <g transform="translate(-22 -20) scale(1.85)" class="ico">
+      <path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z"/>
+      <path d="M20.054 15.987H3.946"/>
+    </g>
+  </g>
+
+  <g transform="translate(540 150)">
+    <text class="label" x="0" y="-56" text-anchor="middle">FastAPI</text>
+    <g class="ico">
+      <rect x="-24" y="-16" width="48" height="10" rx="2.4"/>
+      <rect x="-24" y="-3" width="48" height="10" rx="2.4"/>
+      <rect x="-24" y="10" width="48" height="10" rx="2.4"/>
+    </g>
+  </g>
+
+  <g transform="translate(1580 150)">
+    <text class="label" x="0" y="-82" text-anchor="middle">Workspaces</text>
+    <text class="sub" x="0" y="-58" text-anchor="middle">Site finder</text>
+    <text class="sub" x="0" y="-38" text-anchor="middle">Trade-offs: iMasons Social Accord</text>
+    <text class="sub" x="0" y="-18" text-anchor="middle">Community pulse</text>
+    <path d="M-8 -18 L20 -2 C26 2 22 14 8 18 L-16 10 C-24 6 -22 -12 -8 -18 Z" fill="#fff" stroke="#111" stroke-width="1.7" stroke-linejoin="round"/>
+    <circle cx="0" cy="2" r="3.4" fill="#111"/>
+  </g>
+
+  <g transform="translate(1400 200)">
+    <rect x="-10" y="-4" width="5" height="18" fill="#c8c8c8"/>
+    <rect x="-2.5" y="-4" width="5" height="18" fill="#111"/>
+    <rect x="5" y="-4" width="5" height="18" fill="#c8c8c8"/>
+    <rect x="-1.5" y="-10" width="3" height="3.5" fill="#111"/>
+    <text class="sub" x="0" y="36" text-anchor="middle">iMasons</text>
+    <text class="sub" x="0" y="56" text-anchor="middle">Social Accord</text>
+  </g>
+
+  <g transform="translate(260 360)">
+    <g transform="translate(-22 -22) scale(1.7)" class="ico">
+      <ellipse cx="12" cy="6" rx="8" ry="3"/>
+      <path d="M4 6 v6 c0 1.7 3.6 3 8 3 s8 -1.3 8 -3 V6"/>
+      <ellipse cx="12" cy="12" rx="8" ry="3"/>
+      <path d="M4 12 v6 c0 1.7 3.6 3 8 3 s8 -1.3 8 -3 V12"/>
+    </g>
+    <text class="label" x="0" y="56" text-anchor="middle">35 open datasets</text>
+    <text class="sub" x="0" y="78" text-anchor="middle">EIA, EPA, NREL, FEMA, WRI</text>
+    <text class="sub" x="0" y="98" text-anchor="middle">USGS, NOAA, Census, BLS, PeeringDB</text>
+  </g>
+
+  <g transform="translate(260 640)">
+    <g class="ico">
+      <rect x="-16" y="-18" width="32" height="36" rx="3"/>
+      <path d="M-8 -8 h16 M-8 0 h16 M-8 8 h10"/>
+    </g>
+    <text class="label" x="0" y="42" text-anchor="middle">Research CSVs</text>
+    <text class="sub" x="0" y="64" text-anchor="middle">60 failed projects</text>
+    <text class="sub" x="0" y="84" text-anchor="middle">31 moratoria, 51 states</text>
+  </g>
+
+  <g transform="translate(560 480)">
+    <g transform="translate(-22 -22) scale(1.85)" class="ico">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8 12h8"/>
+      <path d="M12 8v8"/>
+    </g>
+    <text class="label" x="0" y="56" text-anchor="middle">Ingest + FIPS join</text>
+    <text class="sub" x="0" y="78" text-anchor="middle">EPSG:5070</text>
+    <text class="sub" x="0" y="98" text-anchor="middle">table, point, raster, area</text>
+  </g>
+
+  <g transform="translate(900 480)">
+    <g transform="translate(-22 -22) scale(1.85)" class="ico">
+      <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+      <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+      <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+    </g>
+    <text class="label" x="0" y="56" text-anchor="middle">Feature store</text>
+    <text class="sub" x="0" y="78" text-anchor="middle">3,109 counties</text>
+    <text class="sub" x="0" y="98" text-anchor="middle">~100 features, Parquet</text>
+  </g>
+
+  <g transform="translate(1260 480)">
+    <g transform="translate(-22 -22) scale(1.85)" class="ico">
+      <path d="M12 18V5"/>
+      <path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"/>
+      <path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"/>
+      <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"/>
+      <path d="M18 18a4 4 0 0 0 2-7.464"/>
+      <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"/>
+      <path d="M6 18a4 4 0 0 1-2-7.464"/>
+      <path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"/>
+    </g>
+    <text class="label" x="0" y="56" text-anchor="middle">Scoring engine</text>
+    <text class="sub" x="0" y="78" text-anchor="middle">Multi-criteria</text>
+    <text class="sub" x="0" y="98" text-anchor="middle">decision analysis</text>
+    <text class="sub" x="0" y="118" text-anchor="middle">geo-mean + 0.15 veto</text>
+  </g>
+
+  <g transform="translate(1080 780)">
+    <circle cx="0" cy="0" r="7" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text class="label" x="0" y="32" text-anchor="middle">Robustness</text>
+    <text class="sub" x="0" y="54" text-anchor="middle">2,000 weight sets</text>
+    <text class="sub" x="0" y="74" text-anchor="middle">% still in top 10</text>
+  </g>
+
+  <g transform="translate(1260 780)">
+    <circle cx="0" cy="0" r="7" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text class="label" x="0" y="32" text-anchor="middle">Sanity checks</text>
+    <text class="sub" x="0" y="54" text-anchor="middle">legacy persona</text>
+    <text class="sub" x="0" y="74" text-anchor="middle">failure backcast</text>
+  </g>
+
+  <g transform="translate(1440 780)">
+    <circle cx="0" cy="0" r="7" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text class="label" x="0" y="32" text-anchor="middle">Trade-off engine</text>
+    <text class="sub" x="0" y="54" text-anchor="middle">sacrifice a pillar</text>
+    <text class="sub" x="0" y="74" text-anchor="middle">Pareto front</text>
+  </g>
+
+  <g transform="translate(760 960)">
+    <g transform="translate(-22 -22) scale(1.85)" class="ico">
+      <path d="M12 20v2"/>
+      <path d="M12 2v2"/>
+      <path d="M17 20v2"/>
+      <path d="M17 2v2"/>
+      <path d="M2 12h2"/>
+      <path d="M2 17h2"/>
+      <path d="M2 7h2"/>
+      <path d="M20 12h2"/>
+      <path d="M20 17h2"/>
+      <path d="M20 7h2"/>
+      <path d="M7 20v2"/>
+      <path d="M7 2v2"/>
+      <rect x="4" y="4" width="16" height="16" rx="2"/>
+      <rect x="8" y="8" width="8" height="8" rx="1"/>
+    </g>
+    <text class="gemini" x="0" y="56" text-anchor="middle">Gemini</text>
+    <text class="sub" x="0" y="78" text-anchor="middle">Public sentiment</text>
+  </g>
+
+  <g transform="translate(1740 960)">
+    <circle cx="0" cy="0" r="7.5" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text class="label" x="0" y="36" text-anchor="middle">Features / alerts</text>
+  </g>
+
+  <g transform="translate(220 1180)">
+    <polygon points="0,-24 22,-12 22,8 0,20 -22,8 -22,-12" fill="#e67a16"/>
+    <polygon points="0,-24 22,-12 0,-2 -22,-12" fill="#f6b14a"/>
+    <polygon points="0,-2 22,-12 22,8 0,20" fill="#c45f0c"/>
+    <path d="M-8 2 L-2 -10 H6 L0 2 H8 L-4 12 H-10 Z" fill="#fff8ee"/>
+    <text class="label" x="0" y="52" text-anchor="middle">Community sources</text>
+    <text class="sub" x="0" y="74" text-anchor="middle">Scraped from public</text>
+    <text class="sub" x="0" y="94" text-anchor="middle">sources, real time</text>
+  </g>
+
+  <g transform="translate(560 1180)">
+    <g transform="translate(-22 -22) scale(1.85)" class="ico">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8 12h8"/>
+      <path d="M12 8v8"/>
+    </g>
+    <text class="label" x="0" y="56" text-anchor="middle">Normalize</text>
+  </g>
+
+  <g transform="translate(900 1180)">
+    <g transform="translate(-22 -22) scale(1.85)" class="ico">
+      <path d="M12 18V5"/>
+      <path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"/>
+      <path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"/>
+      <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"/>
+      <path d="M18 18a4 4 0 0 0 2-7.464"/>
+      <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"/>
+      <path d="M6 18a4 4 0 0 1-2-7.464"/>
+      <path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"/>
+    </g>
+    <text class="label" x="0" y="56" text-anchor="middle">Embeddings</text>
+  </g>
+
+  <g transform="translate(1580 1180)">
+    <polygon points="0,-22 20,-11 20,11 0,22 -20,11 -20,-11" fill="#ef8b28"/>
+    <polygon points="0,-22 20,-11 0,0 -20,-11" fill="#ffb347"/>
+    <polygon points="0,0 20,-11 20,11 0,22" fill="#d97716"/>
+    <path d="M-20 -11 L0 0 L20 -11 M0 0 V22" fill="none" stroke="#c45f0c" stroke-width="1"/>
+    <text class="label" x="0" y="54" text-anchor="middle">Database</text>
+    <text class="sub" x="0" y="76" text-anchor="middle">SQLite</text>
+  </g>
+
+  <!-- Algorithm -->
+  <rect class="panel" x="36" y="1320" width="900" height="560" rx="12"/>
+  <text class="label" x="56" y="1354">Algorithm</text>
+  <text class="item" x="56" y="1380">Multi-criteria decision analysis (MCDA). One county, seven pillars.</text>
+
+  <circle cx="64" cy="1406" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="1411">Drop a county if it fails a hard rule: more than 50% protected</text>
+  <text class="item" x="78" y="1433">land, an active moratorium, less than 3% buildable land, more</text>
+  <text class="item" x="78" y="1455">than 50 km from a 230 kV line, extreme flood or hurricane (top 3%),</text>
+  <text class="item" x="78" y="1477">or extreme water stress today and in 2050.</text>
+
+  <circle cx="64" cy="1508" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="1513">Scale every feature to 0-1 against a fixed physical anchor, not</text>
+  <text class="item" x="78" y="1535">min-max. Skewed counts use a log scale. A pillar is the mean of</text>
+  <text class="item" x="78" y="1557">its features. Default weights: power 22%, carbon 18%, water 15%,</text>
+  <text class="item" x="78" y="1579">permission 15%, hazard 10%, land 10%, co-benefits 10%.</text>
+
+  <rect class="eqbox" x="56" y="1596" width="860" height="70" rx="8"/>
+  <text class="item" x="72" y="1620">Combined score  (a weak pillar pulls the whole score down)</text>
+  <text class="math" font-size="26" x="72" y="1654">S</text>
+  <text class="math" font-size="22" x="94" y="1654">=</text>
+  <text class="math" font-size="34" x="120" y="1658">&#928;</text>
+  <text class="math" font-size="12" x="138" y="1636">7</text>
+  <text class="math" font-size="12" x="122" y="1674">i = 1</text>
+  <text class="math" font-size="26" x="168" y="1654">p</text>
+  <text class="math" font-size="14" x="184" y="1662">i</text>
+  <text class="math" font-size="16" x="194" y="1640">w</text>
+  <text class="math" font-size="12" x="208" y="1646">i</text>
+  <text class="item" x="250" y="1652">Veto: if any pillar is below 0.15, the county is out.</text>
+
+  <rect class="eqbox" x="56" y="1678" width="860" height="88" rx="8"/>
+  <text class="item" x="72" y="1702">Community re-rank after the model</text>
+  <text class="math" font-size="24" x="72" y="1738">S'</text>
+  <text class="math" font-size="20" x="102" y="1738">=</text>
+  <text class="math" font-size="24" x="128" y="1738">S</text>
+  <text class="math" font-size="22" x="154" y="1738">&#183; e</text>
+  <text class="math" font-size="14" x="186" y="1726">0.3 N c</text>
+  <text class="math" font-size="22" x="248" y="1738">&#183; (1 + 0.1 I) &#183; (1 - 0.3 R) &#183; M</text>
+  <text class="item" x="72" y="1758">N = net sentiment,  c = confidence,  I = incentives,  R = restrictions,  M = 0 if moratorium else 1</text>
+
+  <!-- Research and data -->
+  <rect class="panel" x="956" y="1320" width="868" height="572" rx="12"/>
+  <text class="label" x="976" y="1354">Research and data</text>
+
+  <text class="label" x="976" y="1390" font-size="18">Why sites fail</text>
+  <circle cx="984" cy="1414" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="1419">60 US projects (2022-2026) were blocked, withdrawn,</text>
+  <text class="item" x="998" y="1441">relocated, or delayed.</text>
+  <circle cx="984" cy="1466" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="1471">They die at the grid queue and the council vote,</text>
+  <text class="item" x="998" y="1493">not because of climate or cost.</text>
+
+  <text class="label" x="976" y="1530" font-size="18">How layers join to a county (EPSG:5070)</text>
+  <circle cx="984" cy="1554" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="1559">Table join - FEMA, BLS, Census already have a FIPS code</text>
+  <circle cx="984" cy="1580" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="1585">Point to county - substations, plants, brownfields</text>
+  <circle cx="984" cy="1606" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="1611">Raster zonal stats - land-cover share of the county</text>
+  <circle cx="984" cy="1632" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="1637">Area-weighted overlay - grid regions and water basins</text>
+
+  <text class="label" x="976" y="1674" font-size="18">Sources by pillar</text>
+  <text class="item" x="976" y="1700">Power - EIA-861, HIFLD, OSM, EIA-860 / 860M, LBNL Queued Up</text>
+  <text class="item" x="976" y="1722">Carbon - EPA eGRID, NREL Cambium, NREL ReEDS</text>
+  <text class="item" x="976" y="1744">Water - WRI Aqueduct 4.0, US Drought Monitor, EIA-923, USGS</text>
+  <text class="item" x="976" y="1766">Hazard - FEMA NRI, Wildfire Risk to Communities, NOAA, LOCA2</text>
+  <text class="item" x="976" y="1788">Land - USGS NLCD, PAD-US, PeeringDB, EPA ACRES, GEM</text>
+  <text class="item" x="976" y="1810">Permission - 60 projects, 31 moratoria, EPA Green Book</text>
+  <text class="item" x="976" y="1832">Co-benefits - BLS LAUS, Census ACS, DOE / NETL, USDA ERS</text>
+  <text class="item" x="976" y="1858">Checked: unique FIPS on 3,109 rows; spot checks on Loudoun,</text>
+  <text class="item" x="976" y="1880">Maricopa, Harris, King, Abilene</text>
+
+  <!-- Tech stack -->
+  <rect class="panel" x="36" y="1908" width="900" height="412" rx="12"/>
+  <text class="label" x="56" y="1942">Tech stack</text>
+
+  <text class="label" x="56" y="1980" font-size="18">Scoring</text>
+  <circle cx="64" cy="2004" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2009">Python, pandas, geopandas, rasterio, exactextract</text>
+  <circle cx="64" cy="2030" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2035">Parquet feature store, NumPy vectorized scoring</text>
+  <circle cx="64" cy="2056" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2061">Weights and thresholds live in config/scoring.yaml</text>
+
+  <text class="label" x="56" y="2100" font-size="18">Product</text>
+  <circle cx="64" cy="2124" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2129">FastAPI   POST /rank {n, weights}   returns RankResponse</text>
+  <circle cx="64" cy="2150" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2155">React + Mapbox workspaces (Site finder, Trade-offs, Pulse)</text>
+  <circle cx="64" cy="2176" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2181">SQLite for the awareness store</text>
+
+  <text class="label" x="56" y="2220" font-size="18">Checks</text>
+  <circle cx="64" cy="2244" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2249">Robustness: 2,000 random weight sets; report % still in top 10</text>
+  <circle cx="64" cy="2270" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2275">Sanity: a cheap-power persona must still find today's hubs</text>
+  <circle cx="64" cy="2296" r="3.2" fill="#111"/>
+  <text class="item" x="78" y="2301">Backcast: counties where projects failed score worse on permission</text>
+
+  <!-- Community sources and awareness -->
+  <rect class="panel" x="956" y="1908" width="868" height="412" rx="12"/>
+  <text class="label" x="976" y="1942">Community sources and awareness</text>
+  <text class="item" x="976" y="1970">Gemini reads each item and returns stance, a one-line summary,</text>
+  <text class="item" x="976" y="1992">the place, and any alert. Features / alerts then re-rank sites</text>
+  <text class="item" x="976" y="2014">and feed Community pulse.</text>
+
+  <text class="label" x="976" y="2050" font-size="18">Legislation</text>
+  <circle cx="984" cy="2074" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="2079">Open States, LegiScan, Federal Register, Legistar councils</text>
+
+  <text class="label" x="976" y="2114" font-size="18">News</text>
+  <circle cx="984" cy="2138" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="2143">GDELT, Media Cloud, Google News, curated RSS</text>
+
+  <text class="label" x="976" y="2178" font-size="18">Social</text>
+  <circle cx="984" cy="2202" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="2207">Bluesky (search + live stream), Reddit, Mastodon</text>
+
+  <text class="label" x="976" y="2250" font-size="18">Trade-offs workspace</text>
+  <circle cx="984" cy="2274" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="2279">iMasons Social Accord: economic, social, ecological</text>
+  <circle cx="984" cy="2300" r="3.2" fill="#111"/>
+  <text class="item" x="998" y="2305">Do-no-harm floor. Permission maps to Pushback and Policy.</text>
+</svg>

@@ -2,6 +2,17 @@ import { Analytics, ArrowDown, ArrowUp, Bullhorn, DocumentTasks, Error as Prohib
 import { useDataMode } from '../hooks/useData.js';
 import { STANCE_LABELS, timeAgo } from '../lib/format.js';
 
+export function ImasonsMark({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="4" y="10" width="6" height="18" fill="#bdbdbd" />
+      <rect x="13" y="10" width="6" height="18" fill="currentColor" />
+      <rect x="22" y="10" width="6" height="18" fill="#bdbdbd" />
+      <rect x="14" y="4" width="4" height="4" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function BrandMark() {
   // Concentric contour rings around a summit: the "groundwork" survey mark
   return (

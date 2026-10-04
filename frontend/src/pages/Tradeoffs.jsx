@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { evaluateTradeoffs, getTradeoffPresets } from '../api/client.js';
-import { SampleBanner, Slider, Switch } from '../components/ui.jsx';
+import { ImasonsMark, SampleBanner, Slider, Switch } from '../components/ui.jsx';
 import { useAsync } from '../hooks/useData.js';
 
 const PRESET_NAMES = [
@@ -67,6 +67,13 @@ export default function Tradeoffs() {
       <div className="page-head">
         <h1 style={{ fontSize: 'clamp(1.6rem, 1.3rem + 1.2vw, 2.1rem)' }}>Trade-offs</h1>
         <p>Balance economic, social and ecological value for each place, from tax revenue and power bills to jobs, health, water and biodiversity.</p>
+        <a className="accord-lockup" href="https://imasons.org/the-imasons-social-accord/" target="_blank" rel="noreferrer">
+          <ImasonsMark size={32} />
+          <span>
+            <b>iMasons Social Accord</b>
+            Economic, social and ecological factors from the iMasons framework.
+          </span>
+        </a>
         <SampleBanner>Sample sites with illustrative values. Your ML model and live community signals replace them once connected.</SampleBanner>
       </div>
 
@@ -99,7 +106,7 @@ export default function Tradeoffs() {
             </div>
           </div>
           <div className="group">
-            <h4>Three dimensions</h4>
+            <h4>Social Accord dimensions</h4>
             {['economic', 'social', 'ecological'].map((k) => (
               <Slider
                 key={k}

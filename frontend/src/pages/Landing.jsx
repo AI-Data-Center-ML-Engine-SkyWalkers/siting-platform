@@ -77,7 +77,7 @@ export default function Landing() {
             <div className="engine">
               <span className="icon"><Scales size={20} aria-hidden="true" /></span>
               <h3>Trade-offs</h3>
-              <p>Balance economic, social and ecological value for each place, from tax revenue and power bills to jobs, health, water and biodiversity.</p>
+              <p>Balance economic, social and ecological value for each place using the iMasons Social Accord, from tax revenue and power bills to jobs, health, water and biodiversity.</p>
               <Link to="/tradeoffs">Explore trade-offs</Link>
             </div>
             <div className="engine">

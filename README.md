@@ -14,8 +14,95 @@ Three workspaces share one ranking and one awareness pipeline:
 backend/              FastAPI: awareness pipeline, scoring integration, Social Accord engine, API
 frontend/             React + Vite: landing page, Site finder, Trade-offs, Community pulse
 ml_service_example/   Stub ML service with the exact contract the backend expects
-docs/                 DATA_SOURCES.md, INTEGRATION.md, and product screenshots
+docs/                 architecture, DATA_SOURCES.md, INTEGRATION.md, screenshots
 ```
+
+## Architecture
+
+SitewellEco² answers a simple question: where should a data center be built, and how will that place feel about it?
+
+A site engineer or real estate developer uses the app. **FastAPI** calls the scoring engine with `POST /rank` and slider weights. The shortlist opens three workspaces: Site finder, Trade-offs, and Community pulse.
+
+![SitewellEco² architecture](docs/screenshots/architecture.png)
+
+The diagram is also in `docs/architecture.svg`.
+
+### Algorithm
+
+Multi-criteria decision analysis (MCDA). One county, seven pillars.
+
+- Drop a county if it fails a hard rule: more than 50% protected land, an active moratorium, less than 3% buildable land, more than 50 km from a 230 kV line, extreme flood or hurricane (top 3%), or extreme water stress today and in 2050.
+- Scale every feature to 0–1 against a fixed physical anchor, not min-max. Skewed counts use a log scale. A pillar is the mean of its features.
+- Default weights: power 22%, carbon 18%, water 15%, permission 15%, hazard 10%, land 10%, co-benefits 10%.
+
+Combined score (a weak pillar pulls the whole score down):
+
+$$S = \prod_{i=1}^{7} p_i^{w_i}$$
+
+Veto: if any pillar is below 0.15, the county is out.
+
+Community re-rank after the model:
+
+$$S' = S \cdot e^{0.3Nc} \cdot (1 + 0.1I) \cdot (1 - 0.3R) \cdot M$$
+
+- \(N\) = net sentiment \(c\) = confidence \(I\) = incentives \(R\) = restrictions
+- \(M = 0\) if there is an active moratorium, else \(1\)
+
+### Research and data
+
+**Why sites fail**
+
+- 60 US projects (2022–2026) were blocked, withdrawn, relocated, or delayed.
+- They die at the grid queue and the council vote, not because of climate or cost.
+
+**How layers join to a county (EPSG:5070)**
+
+- Table join — FEMA, BLS, Census already have a FIPS code
+- Point to county — substations, plants, brownfields
+- Raster zonal stats — land-cover share of the county
+- Area-weighted overlay — grid regions and water basins
+
+**Sources by pillar**
+
+- Power — EIA-861, HIFLD, OSM, EIA-860 / 860M, LBNL Queued Up
+- Carbon — EPA eGRID, NREL Cambium, NREL ReEDS
+- Water — WRI Aqueduct 4.0, US Drought Monitor, EIA-923, USGS
+- Hazard — FEMA NRI, Wildfire Risk to Communities, NOAA, LOCA2
+- Land — USGS NLCD, PAD-US, PeeringDB, EPA ACRES, GEM
+- Permission — 60 projects, 31 moratoria, EPA Green Book
+- Co-benefits — BLS LAUS, Census ACS, DOE / NETL, USDA ERS
+
+Checked: unique FIPS on all 3,109 rows; spot checks on Loudoun, Maricopa, Harris, King, Abilene.
+
+### Tech stack
+
+**Scoring**
+
+- Python, pandas, geopandas, rasterio, exactextract
+- Parquet feature store, NumPy vectorized scoring
+- Weights and thresholds live in `config/scoring.yaml`
+
+**Product**
+
+- FastAPI `POST /rank {n, weights}` returns `RankResponse`
+- React + Mapbox workspaces (Site finder, Trade-offs, Pulse)
+- SQLite for the awareness store
+
+**Checks**
+
+- Robustness: 2,000 random weight sets; report % still in top 10
+- Sanity: a cheap-power persona must still find today's hubs
+- Backcast: counties where projects failed score worse on permission
+
+### Community sources and awareness
+
+Gemini reads each item and returns stance, a one-line summary, the place, and any alert. Features / alerts then re-rank sites and feed Community pulse.
+
+- **Legislation** — Open States, LegiScan, Federal Register, Legistar councils
+- **News** — GDELT, Media Cloud, Google News, curated RSS
+- **Social** — Bluesky (search + live stream), Reddit, Mastodon
+
+Trade-offs uses the **iMasons Social Accord** (economic, social, ecological) with a do-no-harm floor. Permission risk maps to iMasons Pushback and Policy.
 
 ## The product
 
@@ -29,7 +116,7 @@ Ranks every candidate site with the scoring model, then moves sites up or down f
 
 ### Trade-offs
 
-Social Accord evaluates each place across **18 indicators** in three dimensions — economic, social and ecological. Weight the dimensions (or the individual indicators), set a do-no-harm floor so one gain cannot hide a wrecked water cycle, and read the radar for the shortlist.
+The **iMasons Social Accord** evaluates each place across **18 indicators** in three dimensions — economic, social and ecological. Weight the dimensions (or the individual indicators), set a do-no-harm floor so one gain cannot hide a wrecked water cycle, and read the radar for the shortlist.
 
 ![Trade-offs radar for a shortlisted site](docs/screenshots/tradeoffs.jpg)
 
