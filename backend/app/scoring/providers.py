@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import inspect
+import time
 
 import httpx
 
@@ -40,6 +41,19 @@ class HttpScoringProvider:
 
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
+        self._meta: dict | None = None
+        self._meta_at = 0.0
+
+    async def meta(self) -> dict:
+        now = time.monotonic()
+        if self._meta is not None and now - self._meta_at < 60:
+            return self._meta
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(f"{self.base_url}/meta")
+            response.raise_for_status()
+            self._meta = response.json()
+            self._meta_at = now
+            return self._meta
 
     async def rank(self, n: int = 10, weights: dict | None = None) -> RankResponse:
         async with httpx.AsyncClient(timeout=60) as client:
@@ -48,7 +62,7 @@ class HttpScoringProvider:
             return RankResponse.model_validate(response.json())
 
     async def candidates(self, weights: dict | None = None) -> RankResponse:
-        return await self.rank(100, weights)
+        return await self.rank(300, weights)
 
     async def site(self, site_id: str) -> SiteScore | None:
         async with httpx.AsyncClient(timeout=30) as client:

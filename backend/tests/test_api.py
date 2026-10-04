@@ -2,6 +2,7 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_api.db"
+os.environ["SCORING_PROVIDER"] = "mock"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -55,6 +56,40 @@ def test_tradeoff_accord_floor_and_dimensions(client):
     no_floor = {**presets["economic"], "min_indicator": None}
     jobs = client.post("/api/tradeoff/evaluate", json={"params": no_floor}).json()
     assert any(r["site_id"] == "williamson" for r in jobs["results"])
+
+
+def test_engine_needs_scoring_service(client):
+    for response in (
+        client.post("/api/engine/solve", json={"objective": "score"}),
+        client.get("/api/engine/pareto", params={"x": "co2_t", "y": "energy_cost_musd"}),
+        client.get("/api/engine/meta"),
+    ):
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Trade-off engine needs the scoring service"
+
+
+def test_meta_uses_provider_meta_when_available(client):
+    scoring = client.app.state.scoring
+
+    async def fake_meta():
+        return {
+            "model_version": "test",
+            "pillars": [{"id": "carbon", "label": "Carbon", "hint": "Grid CO2"}],
+            "presets": [{"id": "base", "label": "Balanced", "weights": {"carbon": 100}}],
+            "factors": [{"id": "co2_t", "pillar": "carbon", "label": "CO2", "better": "low", "unit": "tCO2/yr"}],
+            "metrics": [{"id": "co2_t", "label": "CO2", "unit": "tCO2/yr", "better": "low", "judgment": False}],
+        }
+
+    scoring.meta = fake_meta
+    try:
+        body = client.get("/api/scoring/meta").json()
+    finally:
+        del scoring.meta
+    assert body["pillars"][0]["hint"] == "Grid CO2"
+    assert body["presets"][0]["id"] == "base" and body["metrics"][0]["id"] == "co2_t"
+    assert body["provider"] == "mock" and "betas" in body
+    fallback = client.get("/api/scoring/meta").json()
+    assert "presets" not in fallback and len(fallback["pillars"]) == 6
 
 
 def test_awareness_endpoints_empty(client):

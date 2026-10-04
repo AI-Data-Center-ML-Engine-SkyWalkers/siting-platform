@@ -19,6 +19,15 @@ The service must expose two routes:
 | `POST /rank` | `{"n": 10, "weights": {"power": 50, "water": 80, ...} or null}` | `RankResponse` |
 | `GET /sites/{site_id}` | none | `SiteScore`, or 404 |
 
+Optional routes the platform uses when present:
+
+| Route | Used for |
+| --- | --- |
+| `GET /meta` | Pillars (with `hint`), presets, factor units and trade-off metrics for the sliders and legends (`GET /api/scoring/meta`, cached 60 s) |
+| `POST /engine/solve`, `POST /engine/sweep`, `GET /engine/pareto` | Trade-offs > Limits, proxied unchanged by `/api/engine/*` |
+
+The `datacenter-siting` repo's `service/main.py` implements all of them.
+
 `ml_service_example/main.py` is a working stub with exactly this contract. Replace its `score()` function
 with the real model and the whole app (site finder, trade-offs, re-ranking) works unchanged.
 

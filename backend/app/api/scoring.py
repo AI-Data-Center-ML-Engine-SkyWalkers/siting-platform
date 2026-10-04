@@ -1,6 +1,8 @@
 """Scoring API (steps 2 and 3): the ML model's ranking, optionally re-ranked with community signals."""
 from __future__ import annotations
 
+import inspect
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -18,14 +20,29 @@ router = APIRouter(prefix="/api/scoring", tags=["scoring"])
 
 
 class RankBody(BaseModel):
-    n: int = Field(10, ge=1, le=200)
+    n: int = Field(10, ge=1, le=300)
     weights: dict[str, float] | None = None
     community: bool = True
 
 
 @router.get("/meta")
-def meta(request: Request):
+async def meta(request: Request):
     scoring = get_scoring(request)
+    provider_meta = getattr(scoring, "meta", None)
+    if provider_meta is not None:
+        try:
+            m = await provider_meta() if inspect.iscoroutinefunction(provider_meta) else provider_meta()
+        except Exception as exc:
+            raise HTTPException(502, f"Scoring provider '{scoring.name}' meta failed: {exc}")
+        return {
+            "provider": scoring.name,
+            "model_version": m.get("model_version"),
+            "pillars": m.get("pillars", []),
+            "presets": m.get("presets", []),
+            "factors": m.get("factors", []),
+            "metrics": m.get("metrics", []),
+            "betas": betas(),
+        }
     return {
         "provider": scoring.name,
         "pillars": [{"id": k, "label": v} for k, v in PILLARS.items()],
@@ -50,7 +67,7 @@ async def _rank(request: Request, session: Session, n: int, weights: dict | None
 @router.get("/top")
 async def top(
     request: Request,
-    n: int = Query(10, ge=1, le=200),
+    n: int = Query(10, ge=1, le=300),
     community: bool = True,
     session: Session = Depends(get_session),
 ):

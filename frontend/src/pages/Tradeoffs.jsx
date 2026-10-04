@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { evaluateTradeoffs, getTradeoffPresets } from '../api/client.js';
 import { SampleBanner, Slider, Switch } from '../components/ui.jsx';
 import { useAsync } from '../hooks/useData.js';
+import Limits from './Limits.jsx';
 
 const PRESET_NAMES = [
   ['balanced', 'Balanced'],
@@ -33,7 +35,33 @@ const DEFAULT = {
   top_n: 10,
 };
 
+const VIEWS = [['accord', 'Social Accord'], ['limits', 'Limits']];
+
 export default function Tradeoffs() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get('view') === 'limits' ? 'limits' : 'accord';
+  return (
+    <div className="wrap">
+      <div className="page-head">
+        <h1 style={{ fontSize: 'clamp(1.6rem, 1.3rem + 1.2vw, 2.1rem)' }}>Trade-offs</h1>
+        <p>
+          {view === 'limits'
+            ? 'Set hard limits in real units, such as time to power or CO2, and see which county wins, what you give up, and where the answer changes.'
+            : 'Balance economic, social and ecological value for each place, from tax revenue and power bills to jobs, health, water and biodiversity.'}
+        </p>
+        {view === 'accord' && <SampleBanner>Sample sites with illustrative values. Your ML model and live community signals replace them once connected.</SampleBanner>}
+        <div className="tabs view-tabs" role="tablist" aria-label="Trade-off views">
+          {VIEWS.map(([id, label]) => (
+            <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setSearchParams(id === 'limits' ? { view: id } : {})}>{label}</button>
+          ))}
+        </div>
+      </div>
+      {view === 'limits' ? <Limits /> : <SocialAccord />}
+    </div>
+  );
+}
+
+function SocialAccord() {
   const presets = useAsync(() => getTradeoffPresets(), []);
   const [params, setParams] = useState(DEFAULT);
   const [preset, setPreset] = useState('balanced');
@@ -63,13 +91,7 @@ export default function Tradeoffs() {
   }, [rows, shown, picked]);
 
   return (
-    <div className="wrap">
-      <div className="page-head">
-        <h1 style={{ fontSize: 'clamp(1.6rem, 1.3rem + 1.2vw, 2.1rem)' }}>Trade-offs</h1>
-        <p>Balance economic, social and ecological value for each place, from tax revenue and power bills to jobs, health, water and biodiversity.</p>
-        <SampleBanner>Sample sites with illustrative values. Your ML model and live community signals replace them once connected.</SampleBanner>
-      </div>
-
+    <>
       <div className="tradeoffs">
         <aside className="panel" aria-label="Your trade-offs">
           <div className="group">
@@ -250,7 +272,7 @@ export default function Tradeoffs() {
           </section>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

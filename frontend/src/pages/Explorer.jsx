@@ -1,12 +1,13 @@
 import { ArrowLeft, CheckmarkOutline, ChevronLeft, ChevronRight, Dashboard, Download, Radar, RightPanelClose, Scales, SettingsAdjust, SidePanelClose, SubtractAlt } from '@carbon/icons-react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { evaluateTradeoffs, getEvents, getScoringMeta, getSite, rankSites } from '../api/client.js';
 import PremiumSlider from '../components/PremiumSlider.jsx';
 import { RankDelta, StanceTag, Switch } from '../components/ui.jsx';
 import { useAsync, useDataMode } from '../hooks/useData.js';
 import { exportExcel, exportGeoJSON } from '../lib/export.js';
 import { formatDate, STATES, timeAgo } from '../lib/format.js';
+import { fmtWithUnit, shortLabel, tagsFor } from '../lib/metrics.js';
 
 // Satellite map when a Mapbox token is set at build time; the hologram globe otherwise
 const GlobeScene = lazy(() => import('../components/GlobeScene.jsx'));
@@ -31,6 +32,7 @@ const PILLAR_HINTS = {
   land: 'Reusing brownfields and retired plants',
   community: 'Local opposition and economic need',
 };
+const KEY_FACTORS = ['co2_t', 'water_ml', 'energy_cost_musd', 'time_to_power_yrs'];
 const BALANCED_TRADEOFFS = {
   dimensions: { economic: 34, social: 33, ecological: 33 },
   min_indicator: 30,
@@ -70,12 +72,22 @@ function savePanels(v) {
 export default function Explorer() {
   const mode = useDataMode();
   const meta = useAsync(() => getScoringMeta(), []);
-  const [weights, setWeights] = useState(PRESETS[0][2]);
-  const [preset, setPreset] = useState('balanced');
+  const presets = useMemo(
+    () => (meta.data?.presets?.length ? meta.data.presets.map((p) => [p.id, p.label, p.weights]) : PRESETS),
+    [meta.data],
+  );
+  const [weights, setWeights] = useState(null);
+  const [preset, setPreset] = useState(null);
+  useEffect(() => {
+    if (weights || meta.loading) return;
+    setWeights(presets[0][2]);
+    setPreset(presets[0][0]);
+  }, [presets, meta.loading, weights]);
   const [community, setCommunity] = useState(true);
   const [minScore, setMinScore] = useState(0);
   const [spin, setSpin] = useState(true);
-  const [selectedId, setSelectedId] = useState(null);
+  const [searchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState(() => searchParams.get('site'));
   const [hoveredId, setHoveredId] = useState(null);
   const [leftTab, setLeftTab] = useState('priorities');
   const [styleId, setStyleId] = useState('satellite-streets');
@@ -83,11 +95,11 @@ export default function Explorer() {
   const [areas, setAreas] = useState([]);
   const [exporting, setExporting] = useState('');
   const [leftOpen, setLeftOpen] = useState(() => loadPanels().left ?? true);
-  const [rightOpen, setRightOpen] = useState(() => loadPanels().right ?? true);
+  const [rightOpen, setRightOpen] = useState(() => Boolean(searchParams.get('site')) || (loadPanels().right ?? true));
   const debounced = useDebounced(weights);
   const events = useAsync(() => getEvents(180), []);
 
-  const ranking = useAsync(() => rankSites({ n: 100, weights: debounced, community }), [JSON.stringify(debounced), community]);
+  const ranking = useAsync(() => rankSites({ n: 300, weights: debounced, community }), [JSON.stringify(debounced), community]);
   const tradeoffs = useAsync(() => evaluateTradeoffs(BALANCED_TRADEOFFS, community), [community]);
   const all = ranking.data?.sites || [];
   const inAreas = useMemo(() => all.filter((s) => !areas.length || areas.includes(s.state)), [all, areas]);
@@ -113,9 +125,16 @@ export default function Explorer() {
     }
   };
   const pillars = meta.data?.pillars || [];
-  const total = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
-  const selected = all.find((s) => s.site_id === selectedId) || null;
-  const presetLabel = PRESETS.find(([id]) => id === preset)?.[1] || 'Custom priorities';
+  const factorMeta = meta.data?.factors || [];
+  const total = Object.values(weights || {}).reduce((a, b) => a + b, 0) || 1;
+  const ranked = all.find((s) => s.site_id === selectedId) || null;
+  // A site linked from elsewhere (e.g. Trade-offs > Limits) may sit outside the ranked list
+  const linked = useAsync(
+    () => (selectedId && !ranked && !ranking.loading ? getSite(selectedId).then((d) => d.site).catch(() => null) : Promise.resolve(null)),
+    [selectedId, Boolean(ranked), ranking.loading],
+  );
+  const selected = ranked || (linked.data?.site_id === selectedId ? linked.data : null);
+  const presetLabel = presets.find(([id]) => id === preset)?.[1] || 'Custom priorities';
 
   const openLeft = useCallback(() => setLeftOpen(true), []);
   const openRight = useCallback(() => setRightOpen(true), []);
@@ -183,7 +202,7 @@ export default function Explorer() {
             <div className="float-scroll">
               <p className="small muted" style={{ marginTop: -4 }}>Move a slider and every site on the map is re-scored.</p>
               <div className="preset-row" role="group" aria-label="Presets">
-                {PRESETS.map(([id, label, w]) => (
+                {presets.map(([id, label, w]) => (
                   <button key={id} type="button" className="chip" aria-pressed={preset === id} onClick={() => { setWeights(w); setPreset(id); }}>{label}</button>
                 ))}
               </div>
@@ -192,8 +211,8 @@ export default function Explorer() {
                   key={p.id}
                   id={`w-${p.id}`}
                   label={p.label}
-                  hint={PILLAR_HINTS[p.id]}
-                  value={weights[p.id] ?? 50}
+                  hint={p.hint || PILLAR_HINTS[p.id]}
+                  value={weights?.[p.id] ?? 50}
                   format={(v) => `${Math.round((100 * v) / total)}%`}
                   onChange={(v) => { setWeights((w) => ({ ...w, [p.id]: v })); setPreset(null); }}
                 />
@@ -220,7 +239,7 @@ export default function Explorer() {
       <aside className="float float-right dash" aria-label={selected ? `Site deep dive: ${selected.name}` : 'Insights'} inert={rightOpen ? undefined : ''}>
         <section className="glass float-panel">
           {selected
-            ? <DeepDive key={selected.site_id} site={selected} pillars={pillars} tradeoff={tradeoffs.data?.results?.find((r) => r.site_id === selected.site_id)} onBack={() => setSelectedId(null)} onClose={() => setRightOpen(false)} />
+            ? <DeepDive key={selected.site_id} site={selected} pillars={pillars} factorMeta={factorMeta} tradeoff={tradeoffs.data?.results?.find((r) => r.site_id === selected.site_id)} onBack={() => setSelectedId(null)} onClose={() => setRightOpen(false)} />
             : (
               <Insights
                 all={all} pool={inAreas} visible={visible} community={community} hoveredId={hoveredId} onHover={hover} onSelect={select}
@@ -476,7 +495,28 @@ function ScoreRing({ value }) {
   );
 }
 
-function DeepDive({ site, pillars, tradeoff, onBack, onClose }) {
+function KeyFactors({ site, factorMeta }) {
+  const rows = KEY_FACTORS
+    .map((id) => ({ id, value: site.factors?.[id], meta: factorMeta.find((f) => f.id === id) }))
+    .filter((r) => r.value !== undefined && r.value !== null && r.meta);
+  if (!rows.length) return null;
+  return (
+    <div className="stack" style={{ gap: 8 }}>
+      <h3 style={{ fontSize: '0.95rem' }}>For a 100 MW campus</h3>
+      <div className="kpis kpis-2x2 key-factors">
+        {rows.map(({ id, value, meta }) => (
+          <div className="kpi" key={id}>
+            <b>{fmtWithUnit(value, meta.unit)}</b>
+            <span>{shortLabel(meta.label, id)}</span>
+            {tagsFor(id, site).map((t) => <span key={t} className="tag judgment-tag">{t}</span>)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DeepDive({ site, pillars, factorMeta = [], tradeoff, onBack, onClose }) {
   const [tab, setTab] = useState('overview');
   const detail = useAsync(() => getSite(site.site_id), [site.site_id]);
   const pulse = detail.data?.pulse;
@@ -517,6 +557,7 @@ function DeepDive({ site, pillars, tradeoff, onBack, onClose }) {
       <div className="float-scroll" role="tabpanel">
         {tab === 'overview' && (
           <>
+            <KeyFactors site={full} factorMeta={factorMeta} />
             <div className="stack">
               <h3 style={{ fontSize: '0.95rem' }}>Pillar scores</h3>
               <div className="bars">

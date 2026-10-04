@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import awareness, integration, scoring, tradeoff
+from .api import awareness, engine, integration, scoring, tradeoff
 from .awareness.pipeline import Pipeline
 from .awareness.scheduler import start_scheduler
 from .config import settings
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=f"{settings.app_name} API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_list, allow_methods=["*"], allow_headers=["*"])
-for module in (scoring, tradeoff, awareness, integration):
+for module in (scoring, tradeoff, engine, awareness, integration):
     app.include_router(module.router)
 
 

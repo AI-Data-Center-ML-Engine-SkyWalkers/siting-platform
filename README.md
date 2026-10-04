@@ -94,6 +94,41 @@ See `docs/DATA_SOURCES.md` for the full source list and access rules.
 See `docs/INTEGRATION.md`. In short: return `RankResponse` JSON from `POST /rank`, set
 `SCORING_PROVIDER=http` and `ML_SERVICE_URL`, and the site finder, trade-offs and community re-ranking use it.
 
+The real scoring engine lives in the `datacenter-siting` repo (7 pillars, geometric mean, 3,109 counties,
+and a limits solver). Run it as a separate service on port 8001:
+
+```bash
+# terminal 1: scoring service (from the datacenter-siting repo)
+cd datacenter-siting
+source .venv/bin/activate
+python -m uvicorn service.main:app --port 8001     # GET /meta, POST /rank, GET /sites/{fips}, /engine/*
+
+# terminal 2: platform backend
+cd siting-platform/backend
+# backend/.env: SCORING_PROVIDER=http and ML_SERVICE_URL=http://localhost:8001
+uvicorn app.main:app --reload
+
+# terminal 3: frontend
+cd siting-platform/frontend && npm run dev          # http://localhost:5173
+```
+
+With the service connected:
+
+- **Site finder** reads pillars, slider hints, presets (Balanced, Carbon first, Cost first, Community first)
+  and factor units from `GET /api/scoring/meta`, which forwards the service's `/meta`. Balanced puts
+  Cowlitz County, WA first.
+- **Trade-offs > Limits** calls `/api/engine/solve`, `/api/engine/sweep` and `/api/engine/pareto`, which
+  proxy the service's limits solver. Without the service these routes return 503 and the tab says
+  "Connect the scoring service to use limits".
+- PUE and on-site water are labeled assumptions, energy cost is electricity only, and time to power is
+  tagged "judgment" (NorthernGrid_West) or "national default" (4-year fallback).
+
+![Site finder with the 7 real pillars and a county deep dive](docs/screenshots/site-finder-real-pillars.png)
+
+![Trade-offs > Limits: lowest CO2 with power in at most 4 years](docs/screenshots/tradeoffs-limits.png)
+
+![Pareto front of CO2 against energy cost](docs/screenshots/tradeoffs-limits-pareto.png)
+
 ## Deploy as one server
 
 ```bash
@@ -120,6 +155,8 @@ Tests run offline: collector parsers use recorded-shape payloads and the pipelin
 | `POST /api/scoring/rank` | Same, with pillar weights from the sliders |
 | `GET /api/scoring/sites/{id}` | One site with its community pulse |
 | `POST /api/tradeoff/evaluate` | Social Accord shortlist: 18 indicators, three dimensions, do-no-harm floor |
+| `POST /api/engine/solve`, `POST /api/engine/sweep` | Limits solver and trade-off curve (scoring service required) |
+| `GET /api/engine/pareto`, `GET /api/engine/meta` | Pareto front and the solver's metrics and pillars (scoring service required) |
 | `GET /api/awareness/search` | Search news, bills and posts (semantic or keyword) with filters |
 | `GET /api/awareness/regions/{state or FIPS}` | Pros, cons, policies and upcoming events for a place |
 | `GET /api/awareness/map` | Community indices by state or county |

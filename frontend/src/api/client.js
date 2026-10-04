@@ -92,6 +92,25 @@ export async function evaluateTradeoffs(params, useCommunity = true) {
   return evaluateTradeoff(params, useCommunity);
 }
 
+// ---------- Limits engine (scoring service only; no sample twin) ----------
+export const ENGINE_OFFLINE = 'Connect the scoring service to use limits';
+const engineOffline = () => ({ unavailable: true, message: ENGINE_OFFLINE });
+
+async function engineCall(path, options) {
+  if ((await dataMode()) !== 'live') return engineOffline();
+  try {
+    return await http(path, options);
+  } catch (err) {
+    if (String(err.message).startsWith('503')) return engineOffline();
+    throw err;
+  }
+}
+
+export const getEngineMeta = () => engineCall('/api/engine/meta');
+export const engineSolve = (body) => engineCall('/api/engine/solve', { method: 'POST', body });
+export const engineSweep = (body) => engineCall('/api/engine/sweep', { method: 'POST', body });
+export const enginePareto = (params) => engineCall(`/api/engine/pareto${qs(params)}`);
+
 // ---------- Awareness (step 5) ----------
 export async function getTopics() {
   if ((await dataMode()) === 'live') return http('/api/awareness/topics');
