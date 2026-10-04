@@ -41,6 +41,11 @@ export function formatDate(iso) {
   return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/** Model scores sit close together, so whole numbers would show false ties. */
+export function fmtScore(score) {
+  return score == null || Number.isNaN(Number(score)) ? '-' : Number(score).toFixed(1);
+}
+
 /** Score 0-100 to one of five ramp colors (CSS variables). */
 export function rampColor(score, lo = 0, hi = 100) {
   if (hi - lo < 1e-9) return 'var(--s3)';

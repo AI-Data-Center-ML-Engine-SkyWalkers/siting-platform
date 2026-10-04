@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { feature } from 'topojson-client';
 import statesTopo from 'us-atlas/states-10m.json';
 import countries from 'world-atlas/countries-110m.json';
-import { STATES } from '../lib/format.js';
+import { fmtScore, STATES } from '../lib/format.js';
 
 // Other countries are faint dots for context; the US is drawn as interactive states.
 // North Korea's 110m outline makes the H3 polyfill throw; it is too small to matter at this resolution.
@@ -490,8 +490,8 @@ export default function GlobeScene({ sites, selectedId, hoveredId, onSelect, onH
       el.classList.toggle('hot', s.site_id === hoveredId);
       el.querySelector('.mk-rank').textContent = i < 10 ? String(i + 1) : '';
       el.querySelector('.mk-tip b').textContent = s.name;
-      el.querySelector('.mk-tip small').textContent = `Rank ${i + 1}, score ${Math.round(sc)}`;
-      el.querySelector('.mk').setAttribute('aria-label', `${s.name}: rank ${i + 1}, score ${Math.round(sc)}`);
+      el.querySelector('.mk-tip small').textContent = `Rank ${i + 1}, score ${fmtScore(sc)}`;
+      el.querySelector('.mk').setAttribute('aria-label', `${s.name}: rank ${i + 1}, score ${fmtScore(sc)}`);
     });
   }, [markers, selectedId, hoveredId, lo, hi, markerFor]);
 
@@ -506,7 +506,7 @@ export default function GlobeScene({ sites, selectedId, hoveredId, onSelect, onH
   const stateLabel = (f) => {
     const st = stateStats[f.abbr];
     const body = st
-      ? `${st.n} candidate site${st.n > 1 ? 's' : ''}<br/>Best: ${esc(st.bestName)}, score <span>${Math.round(st.best)}</span><br/><em>${areas.includes(f.abbr) ? 'Click to clear the focus' : 'Click to focus on this state'}</em>`
+      ? `${st.n} candidate site${st.n > 1 ? 's' : ''}<br/>Best: ${esc(st.bestName)}, score <span>${fmtScore(st.best)}</span><br/><em>${areas.includes(f.abbr) ? 'Click to clear the focus' : 'Click to focus on this state'}</em>`
       : 'No candidate sites in view';
     return `<div class="globe-tip"><b>${esc(f.properties.name)}</b>${body}</div>`;
   };

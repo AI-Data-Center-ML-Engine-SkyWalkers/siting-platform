@@ -5,11 +5,12 @@ import Contours from '../components/Contours.jsx';
 import USMap from '../components/USMap.jsx';
 import { AlertFeed, LiveDot } from '../components/ui.jsx';
 import { useAlerts, useAsync, useDataMode } from '../hooks/useData.js';
+import { fmtScore } from '../lib/format.js';
 
 const STEPS = [
   ['Collect public data', 'Grid carbon, water stress, climate risk, land and transmission from government datasets.'],
   ['Score every site', 'Our model weighs each factor and ranks candidate sites on sustainability.'],
-  ['Listen to communities', 'News, bills, council agendas and public posts adjust the ranking up or down.'],
+  ['Listen to communities', 'News, bills, council agendas and public posts show how each shortlisted place feels about a data center.'],
   ['Weigh your trade-offs', 'Balance economic, social and ecological value, and keep a do-no-harm floor so one gain cannot hide a wrecked water cycle.'],
   ['Stay alerted', 'Hear about moratoria, incentives and shifts in local sentiment as they happen.'],
 ];
@@ -23,7 +24,7 @@ const TIERS = [
 
 export default function Landing() {
   const mode = useDataMode();
-  const top = useAsync(() => rankSites({ n: 10, community: true }), []);
+  const top = useAsync(() => rankSites({ n: 10, community: false }), []);
   const { alerts, connected, fresh } = useAlerts(6);
   const sites = top.data?.sites || [];
 
@@ -50,11 +51,11 @@ export default function Landing() {
               markers={sites.map((s, i) => ({
                 id: s.site_id, lat: s.lat, lon: s.lon, r: 12, text: i + 1,
                 fill: i < 3 ? 'var(--moss)' : 'var(--fern)',
-                title: `${i + 1}. ${s.name}, score ${Math.round(s.final_score ?? s.score)}`,
+                title: `${i + 1}. ${s.name}, score ${fmtScore(s.score)}`,
               }))}
             />
             <figcaption className="hero-caption">
-              <span>Top 10 sites right now, after community signals</span>
+              <span>Top 10 sites from the scoring model</span>
               {mode === 'sample' && <span>Sample data</span>}
             </figcaption>
           </figure>
@@ -71,7 +72,7 @@ export default function Landing() {
             <div className="engine">
               <span className="icon"><Location size={20} aria-hidden="true" /></span>
               <h3>Site finder</h3>
-              <p>Ranks every candidate site with the scoring model, then moves sites up or down based on what their communities are saying.</p>
+              <p>Ranks every candidate site with the scoring model, and shows what each site's community is saying alongside it.</p>
               <Link to="/sites">Open the site finder</Link>
             </div>
             <div className="engine">

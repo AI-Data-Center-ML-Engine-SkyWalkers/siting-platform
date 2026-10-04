@@ -3,10 +3,10 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import { Link, useSearchParams } from 'react-router-dom';
 import { evaluateTradeoffs, getEvents, getScoringMeta, getSite, rankSites } from '../api/client.js';
 import PremiumSlider from '../components/PremiumSlider.jsx';
-import { RankDelta, StanceTag, Switch } from '../components/ui.jsx';
+import { StanceTag, Switch } from '../components/ui.jsx';
 import { useAsync, useDataMode } from '../hooks/useData.js';
 import { exportExcel, exportGeoJSON } from '../lib/export.js';
-import { formatDate, STATES, timeAgo } from '../lib/format.js';
+import { fmtScore, formatDate, STATES, timeAgo } from '../lib/format.js';
 import { fmtWithUnit, shortLabel, tagsFor } from '../lib/metrics.js';
 
 // Satellite map when a Mapbox token is set at build time; the hologram globe otherwise
@@ -46,7 +46,7 @@ const DIMENSION_LABELS = [
   ['economic', 'Economic'], ['social', 'Social'], ['ecological', 'Ecological'],
 ];
 
-const scoreOf = (s) => s.final_score ?? s.score;
+const scoreOf = (s) => s.score;
 function usableCopy(value) {
   return Boolean(value && String(value).trim() && !/^[\s.!?“”"'‘’…]+$/.test(String(value).trim()));
 }
@@ -83,7 +83,6 @@ export default function Explorer() {
     setWeights(presets[0][2]);
     setPreset(presets[0][0]);
   }, [presets, meta.loading, weights]);
-  const [community, setCommunity] = useState(true);
   const [minScore, setMinScore] = useState(0);
   const [spin, setSpin] = useState(true);
   const [searchParams] = useSearchParams();
@@ -99,8 +98,9 @@ export default function Explorer() {
   const debounced = useDebounced(weights);
   const events = useAsync(() => getEvents(180), []);
 
-  const ranking = useAsync(() => rankSites({ n: 300, weights: debounced, community }), [JSON.stringify(debounced), community]);
-  const tradeoffs = useAsync(() => evaluateTradeoffs(BALANCED_TRADEOFFS, community), [community]);
+  // Community signals are shown per site but never reorder the model's ranking
+  const ranking = useAsync(() => rankSites({ n: 300, weights: debounced, community: false }), [JSON.stringify(debounced)]);
+  const tradeoffs = useAsync(() => evaluateTradeoffs(BALANCED_TRADEOFFS, true), []);
   const all = ranking.data?.sites || [];
   const inAreas = useMemo(() => all.filter((s) => !areas.length || areas.includes(s.state)), [all, areas]);
   const visible = useMemo(() => inAreas.filter((s) => scoreOf(s) >= minScore), [inAreas, minScore]);
@@ -220,7 +220,6 @@ export default function Explorer() {
               <div className="divider" />
               <PremiumSlider id="min-score" label="Show sites scoring at least" min={0} max={90} step={5} value={minScore} onChange={setMinScore}
                 format={(v) => (v === 0 ? 'All' : `${v}+`)} hint={`${visible.length} of ${inAreas.length} sites shown`} />
-              <Switch id="community" label="Adjust for community signals" checked={community} onChange={setCommunity} />
               <Switch id="spin" label={MapboxStage ? 'Spin the globe when zoomed out' : 'Scan animation'} checked={spin} onChange={setSpin} />
               {mode === 'sample' && <p className="tiny muted">Sample sites with illustrative values. Connect the scoring model to see real candidates.</p>}
             </div>
@@ -242,7 +241,7 @@ export default function Explorer() {
             ? <DeepDive key={selected.site_id} site={selected} pillars={pillars} factorMeta={factorMeta} tradeoff={tradeoffs.data?.results?.find((r) => r.site_id === selected.site_id)} onBack={() => setSelectedId(null)} onClose={() => setRightOpen(false)} />
             : (
               <Insights
-                all={all} pool={inAreas} visible={visible} community={community} hoveredId={hoveredId} onHover={hover} onSelect={select}
+                all={all} pool={inAreas} visible={visible} hoveredId={hoveredId} onHover={hover} onSelect={select}
                 loading={ranking.loading && !all.length} minScore={minScore} setMinScore={setMinScore} pillars={pillars}
                 events={visibleEvents} areas={areas} toggleArea={toggleArea} onClose={() => setRightOpen(false)}
               />
@@ -292,12 +291,11 @@ function median(values) {
   return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
 }
 
-function Insights({ all, pool, visible, community, hoveredId, onHover, onSelect, loading, minScore, setMinScore, pillars, events, areas, toggleArea, onClose }) {
+function Insights({ all, pool, visible, hoveredId, onHover, onSelect, loading, minScore, setMinScore, pillars, events, areas, toggleArea, onClose }) {
   const [tab, setTab] = useState('top');
   const top10 = visible.slice(0, 10);
   const best = visible[0];
   const med = median(visible.map(scoreOf));
-  const moved = visible.filter((s) => s.rank_change).length;
   const topStates = useMemo(() => {
     const c = {};
     top10.forEach((s) => { c[s.state] = (c[s.state] || 0) + 1; });
@@ -316,9 +314,9 @@ function Insights({ all, pool, visible, community, hoveredId, onHover, onSelect,
         <h2 className="dash-title">Siting dashboard</h2>
         <div className="kpis kpis-2x2">
           <Kpi value={visible.length} label="sites in view" sub={`of ${all.length} scored`} />
-          <Kpi value={best ? Math.round(scoreOf(best)) : '-'} label="top score" sub={best?.name} />
-          <Kpi value={med != null ? Math.round(med) : '-'} label="median score" sub="sites in view" />
-          <Kpi value={community ? moved : 'Off'} label="moved by community" sub={community ? 'sites changed rank' : 'signals switched off'} />
+          <Kpi value={best ? fmtScore(scoreOf(best)) : '-'} label="top score" sub={best?.name} />
+          <Kpi value={fmtScore(med)} label="median score" sub="sites in view" />
+          <Kpi value={topStates.length} label="states in top 10" sub={topStates[0] ? `most in ${STATES[topStates[0][0]] || topStates[0][0]}` : undefined} />
         </div>
         <div className="tabs" role="tablist" aria-label="Insights">
           {[['top', 'Top 10'], ['analytics', 'Analytics'], ['community', 'Community']].map(([id, label]) => (
@@ -330,7 +328,7 @@ function Insights({ all, pool, visible, community, hoveredId, onHover, onSelect,
       <div className="float-scroll" role="tabpanel">
         {tab === 'top' && (
           <>
-            <p className="tiny muted" style={{ marginTop: -6 }}>{community ? 'Ranked after community signals. Arrows show the change from the model score.' : 'Ranked by the scoring model alone.'}</p>
+            <p className="tiny muted" style={{ marginTop: -6 }}>Ranked by the scoring model. Open a site to see its community signals.</p>
             {loading && <p className="small muted">Scoring sites</p>}
             {!loading && !top10.length && <p className="small muted">No site meets your minimum score. Lower it to see more.</p>}
             <ol className="leaderboard">
@@ -349,11 +347,11 @@ function Insights({ all, pool, visible, community, hoveredId, onHover, onSelect,
                     <span style={{ minWidth: 0 }}>
                       <span className="lb-name" style={{ display: 'block' }}>{s.name}</span>
                       <span className="lb-sub">
-                        {community && s.base_rank != null ? <><span>Model rank {s.base_rank}</span><RankDelta change={s.rank_change} /></> : <span>County {s.county_fips}</span>}
+                        <span>County {s.county_fips}</span>
                       </span>
                       <span className="lb-bar" aria-hidden="true"><i style={{ width: `${scoreOf(s)}%` }} /></span>
                     </span>
-                    <span className="lb-score">{Math.round(scoreOf(s))}<small>score</small></span>
+                    <span className="lb-score">{fmtScore(scoreOf(s))}<small>score</small></span>
                   </button>
                 </li>
               ))}
@@ -480,7 +478,7 @@ function ScoreRing({ value }) {
   const [shown, setShown] = useState(0);
   useEffect(() => { const t = setTimeout(() => setShown(value), 60); return () => clearTimeout(t); }, [value]);
   return (
-    <div className="score-ring" role="img" aria-label={`Score ${Math.round(value)} out of 100`}>
+    <div className="score-ring" role="img" aria-label={`Score ${fmtScore(value)} out of 100`}>
       <svg viewBox="0 0 104 104">
         <defs>
           <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
@@ -490,7 +488,7 @@ function ScoreRing({ value }) {
         <circle className="bg" cx="52" cy="52" r={r} />
         <circle className="fg" cx="52" cy="52" r={r} strokeDasharray={c} strokeDashoffset={c * (1 - shown / 100)} />
       </svg>
-      <div className="val"><div><b>{Math.round(value)}</b><small>of 100</small></div></div>
+      <div className="val"><div><b>{fmtScore(value)}</b><small>of 100</small></div></div>
     </div>
   );
 }
@@ -521,7 +519,7 @@ function DeepDive({ site, pillars, factorMeta = [], tradeoff, onBack, onClose })
   const detail = useAsync(() => getSite(site.site_id), [site.site_id]);
   const pulse = detail.data?.pulse;
   const full = detail.data?.site || site;
-  const adj = site.community;
+  const adj = detail.data?.community;
   const f = pulse?.features;
 
   return (
@@ -544,8 +542,8 @@ function DeepDive({ site, pillars, factorMeta = [], tradeoff, onBack, onClose })
         </div>
         <div className="kpis">
           <div className="kpi"><b>#{site.rank}</b><span>overall rank</span></div>
-          <div className="kpi"><b>{Math.round(site.base_score ?? site.score)}</b><span>model score</span></div>
-          <div className="kpi"><b>{site.rank_change > 0 ? `+${site.rank_change}` : site.rank_change ?? 0}</b><span>places from community</span></div>
+          <div className="kpi"><b>{fmtScore(site.score)}</b><span>model score</span></div>
+          <div className="kpi"><b>{adj ? adj.coverage : '-'}</b><span>local signals</span></div>
         </div>
         <div className="tabs" role="tablist" aria-label="Site details">
           {[['overview', 'Overview'], ['community', 'Community'], ['tradeoffs', 'Trade-offs']].map(([id, label]) => (
@@ -580,9 +578,9 @@ function DeepDive({ site, pillars, factorMeta = [], tradeoff, onBack, onClose })
                 <ul>{(full.cons || []).map((c) => <li key={c}>{c}</li>)}</ul>
               </div>
             </div>
-            {adj && (
+            {adj?.notes?.length > 0 && (
               <div className="stack" style={{ gap: 6 }}>
-                <h3 style={{ fontSize: '0.95rem' }}>Why it moved</h3>
+                <h3 style={{ fontSize: '0.95rem' }}>Community notes</h3>
                 <ul className="note-list">{adj.notes.map((n) => <li key={n}>{n}</li>)}</ul>
               </div>
             )}

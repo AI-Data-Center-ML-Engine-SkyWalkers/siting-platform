@@ -109,7 +109,7 @@ function sitesGeoJSON(sites, selectedId, hoveredId) {
       type: 'Feature',
       id: i,
       properties: {
-        id: s.site_id, name: s.name, rank: i + 1, top: i < 10, score: Math.round(s.final_score ?? s.score),
+        id: s.site_id, name: s.name, rank: i + 1, top: i < 10, score: Math.round((s.final_score ?? s.score) * 10) / 10,
         color: rampHex(s.final_score ?? s.score, lo, hi), sel: s.site_id === selectedId, hov: s.site_id === hoveredId,
       },
       geometry: { type: 'Point', coordinates: [s.lon, s.lat] },
