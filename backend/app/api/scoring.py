@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..awareness.insights import region_summary
@@ -10,7 +11,8 @@ from ..db import get_session
 from ..scoring.rerank import rerank
 from ..scoring.sample_sites import FACTORS, PILLARS
 from ..scoring.schemas import RerankResponse
-from .deps import betas, community_lookup, get_pipeline, get_scoring
+from ..models import Item
+from .deps import betas, community_lookup, get_pipeline, get_scoring, item_to_dict
 
 router = APIRouter(prefix="/api/scoring", tags=["scoring"])
 
@@ -72,5 +74,7 @@ async def site(site_id: str, request: Request, session: Session = Depends(get_se
     community = lookup(s.county_fips, s).as_dict() if s.county_fips else None
     pulse = region_summary(session, get_pipeline(request).features, fips=s.county_fips) if s.county_fips else None
     if pulse:
-        pulse.pop("recent_item_ids", None)
+        ids = pulse.pop("recent_item_ids", [])[:5]
+        items = {i.id: i for i in session.scalars(select(Item).where(Item.id.in_(ids))).all()} if ids else {}
+        pulse["recent"] = [item_to_dict(items[i]) for i in ids if i in items]
     return {"site": s.model_dump(), "community": community, "pulse": pulse}

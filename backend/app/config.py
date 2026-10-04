@@ -7,10 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    app_name: str = "Groundwork"
-    database_url: str = "sqlite:///./groundwork.db"
+    app_name: str = "SitewellEco²"
+    database_url: str = "sqlite:///./sitewelleco.db"
     cors_origins: str = "http://localhost:5173"
-    user_agent: str = "GroundworkBot/0.1 (sustainable data center siting research)"
+    user_agent: str = "SitewellEco2Bot/0.1 (sustainable data center siting research)"
     enable_scheduler: bool = False
     enable_jetstream: bool = False
 

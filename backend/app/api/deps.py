@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..awareness.analyze import TOPIC_LABELS
 from ..awareness.alerts import region_label
 from ..awareness.features import RegionFeatures
+from ..awareness.geo import coords_for
 from ..config import settings
 from ..models import Item
 
@@ -50,6 +51,7 @@ def community_lookup(pipeline, session: Session, scoring):
 def item_to_dict(item: Item, corroborated: bool = False, score: float | None = None) -> dict:
     a = item.analysis
     is_social = item.source_type == "social"
+    lat, lon = coords_for(item.state, item.county_fips)
     return {
         "id": item.id,
         "source": item.source,
@@ -63,6 +65,8 @@ def item_to_dict(item: Item, corroborated: bool = False, score: float | None = N
         "state": item.state,
         "county_fips": item.county_fips,
         "region": region_label(item.state, item.county_fips) if (item.state or item.county_fips) else None,
+        "lat": lat,
+        "lon": lon,
         "credibility": item.credibility,
         "cluster_id": item.cluster_id,
         "corroborated": corroborated,
@@ -95,3 +99,18 @@ def corroborated_clusters(session: Session, cluster_ids: list[int]) -> set[int]:
         .group_by(Item.cluster_id)
     ).all()
     return {cid for cid, n in rows if n >= 2}
+
+
+OPPOSE_EVENTS = {"moratorium", "restriction", "lawsuit", "protest", "project_canceled"}
+SUPPORT_EVENTS = {"incentive", "project_approved", "project_announced"}
+
+
+def event_tone(event_type: str, stance: str) -> str:
+    """Map color group for an event: against, for, watch (process steps) or info."""
+    if event_type in OPPOSE_EVENTS or (stance == "oppose" and event_type != "other"):
+        return "against"
+    if event_type in SUPPORT_EVENTS or stance == "support":
+        return "for"
+    if event_type in {"public_hearing", "zoning_decision", "bill_introduced", "bill_advanced", "bill_passed"}:
+        return "watch"
+    return "info"

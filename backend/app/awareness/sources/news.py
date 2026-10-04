@@ -9,7 +9,7 @@ import feedparser
 import httpx
 
 from ..base import Collector, RawItem, log, parse_dt
-from ..keywords import GDELT_QUERY, GOOGLE_NEWS_QUERIES, LEGISLATION_QUERY, mentions_data_center
+from ..keywords import GDELT_QUERY, GOOGLE_NEWS_QUERIES, LEGISLATION_QUERY, is_data_center_news
 from ..normalize import clean_text, domain_of, strip_outlet_suffix
 
 # Curated feeds that track data center fights and subsidies. Add local papers via RSS_FEEDS.
@@ -122,7 +122,7 @@ class RssCollector(Collector):
                 log.warning("rss: %s failed: %s", url, exc)
                 continue
             for item in self.parse_feed(response.text, kind, outlet):
-                if item.when() >= since and mentions_data_center(item.title, item.text):
+                if item.when() >= since and is_data_center_news(item.title, item.text):
                     items.append(item)
         return items
 

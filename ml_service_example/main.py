@@ -1,4 +1,4 @@
-"""Minimal ML scoring service with the exact contract the Groundwork backend expects.
+"""Minimal ML scoring service with the exact contract the SitewellEco² backend expects.
 
     pip install fastapi uvicorn
     uvicorn main:app --port 8001

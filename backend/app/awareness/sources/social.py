@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import httpx
 
 from ..base import Collector, RawItem, log, parse_dt
-from ..keywords import MASTODON_TAGS, SOCIAL_QUERY, SUBREDDIT_QUERY, mentions_data_center
+from ..keywords import MASTODON_TAGS, SOCIAL_QUERY, SUBREDDIT_QUERY, is_data_center_news
 from ..normalize import clean_text
 
 
@@ -117,7 +117,7 @@ class JetstreamListener:
         langs = record.get("langs") or []
         if langs and "en" not in langs:
             return None
-        if not mentions_data_center(text):
+        if not is_data_center_news(text):
             return None
         did = event.get("did", "")
         return RawItem(
@@ -241,7 +241,7 @@ class MastodonCollector(Collector):
                 continue
             for status in response.json():
                 item = self.parse_status(status)
-                if item.when() >= since:
+                if item.when() >= since and is_data_center_news(item.title, item.text):
                     items.append(item)
         return items
 

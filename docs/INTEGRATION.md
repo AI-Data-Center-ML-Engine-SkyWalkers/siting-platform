@@ -55,7 +55,7 @@ It can be sync or async.
   "factors": {"carbon": 520, "water_stress": 1.8},   // raw values, any keys
   "pros": ["Low water stress"], "cons": ["Carbon-heavy grid"],
   "excluded": false, "exclusion_reason": null,
-  "attributes": {                    // optional, feeds the trade-off engine
+  "attributes": {                    // optional, feeds the Social Accord trade-off engine
     "time_to_power_years": 6, "tx_km": 2, "water_stress": 1.8,
     "heat_need": 50, "climate_adversity": 20, "land_cost_index": 95, "unemployment": 2.6
   }

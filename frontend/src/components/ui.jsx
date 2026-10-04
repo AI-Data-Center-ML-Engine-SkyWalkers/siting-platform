@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowDown, ArrowUp, BadgeCheck, Ban, Building2, Gavel, Landmark, Megaphone, MessageCircle, Minus, Scale, Sprout, Users } from 'lucide-react';
+import { Analytics, ArrowDown, ArrowUp, Bullhorn, DocumentTasks, Error as Prohibited, Group, Locked, MapBoundary, Money, Notification, Policy, Scales, Subtract, WarningAlt } from '@carbon/icons-react';
 import { useDataMode } from '../hooks/useData.js';
 import { STANCE_LABELS, timeAgo } from '../lib/format.js';
 
@@ -17,7 +17,7 @@ export function ModeChip() {
   const mode = useDataMode();
   if (!mode) return null;
   return (
-    <span className={`mode-chip ${mode}`} title={mode === 'live' ? 'Connected to the Groundwork backend' : 'Backend not connected: showing sample data'}>
+    <span className={`mode-chip ${mode}`} title={mode === 'live' ? 'Connected to the SitewellEco² backend' : 'Backend not connected: showing sample data'}>
       <i aria-hidden="true" />
       {mode === 'live' ? 'Live data' : 'Sample data'}
     </span>
@@ -29,24 +29,13 @@ export function SampleBanner({ children }) {
   if (mode !== 'sample') return null;
   return (
     <div className="sample-banner" role="note">
-      <AlertTriangle aria-hidden="true" />
+      <WarningAlt size={16} aria-hidden="true" />
       <span>{children || 'You are looking at sample data, not real events. Start the backend to see live results.'}</span>
     </div>
   );
 }
 
-export function Slider({ id, label, value, onChange, min = 0, max = 100, step = 5, hint, format = (v) => v }) {
-  return (
-    <div className="slider">
-      <div className="slider-head">
-        <label htmlFor={id}>{label}</label>
-        <output htmlFor={id}>{format(value)}</output>
-      </div>
-      <input id={id} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
-      {hint && <p>{hint}</p>}
-    </div>
-  );
-}
+export { default as Slider } from './PremiumSlider.jsx';
 
 export function Switch({ id, label, checked, onChange }) {
   return (
@@ -62,19 +51,19 @@ export function StanceTag({ stance }) {
 }
 
 export function RankDelta({ change }) {
-  if (!change) return <span className="delta same"><Minus aria-hidden="true" />same</span>;
+  if (!change) return <span className="delta same"><Subtract size={16} aria-hidden="true" />same</span>;
   const up = change > 0;
   return (
     <span className={`delta ${up ? 'up' : 'down'}`} title={`${up ? 'Up' : 'Down'} ${Math.abs(change)} after community signals`}>
-      {up ? <ArrowUp aria-hidden="true" /> : <ArrowDown aria-hidden="true" />}
+      {up ? <ArrowUp size={16} aria-hidden="true" /> : <ArrowDown size={16} aria-hidden="true" />}
       {Math.abs(change)}
     </span>
   );
 }
 
 const KIND_ICONS = {
-  moratorium: Ban, restriction: Scale, incentive: Sprout, bill: Landmark, policy_change: Gavel, hearing: Users,
-  zoning: Building2, protest: Megaphone, lawsuit: Gavel, project_canceled: Ban, sentiment_shift: MessageCircle,
+  moratorium: Prohibited, restriction: Locked, incentive: Money, bill: Policy, policy_change: DocumentTasks, hearing: Group,
+  zoning: MapBoundary, protest: Bullhorn, lawsuit: Scales, project_canceled: Prohibited, sentiment_shift: Analytics,
 };
 const GOOD_KINDS = new Set(['incentive']);
 
@@ -83,11 +72,11 @@ export function AlertFeed({ alerts, fresh = new Set(), empty = 'No alerts yet. T
   return (
     <ul className="feed">
       {alerts.map((a) => {
-        const Icon = KIND_ICONS[a.kind] || BadgeCheck;
+        const Icon = KIND_ICONS[a.kind] || Notification;
         const tone = GOOD_KINDS.has(a.kind) ? 'good' : `sev${a.severity}`;
         return (
           <li key={a.id} className={fresh.has(a.id) ? 'fresh' : ''}>
-            <span className={`kind ${tone}`} aria-hidden="true"><Icon /></span>
+            <span className={`kind ${tone}`} aria-hidden="true"><Icon size={16} /></span>
             <div>
               <b>{a.title}</b>
               <p>{a.body}</p>

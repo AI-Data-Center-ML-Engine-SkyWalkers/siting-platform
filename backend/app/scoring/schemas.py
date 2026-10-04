@@ -24,7 +24,7 @@ class SiteScore(BaseModel):
     exclusion_reason: str | None = None
     attributes: dict[str, float | str | None] = Field(
         default_factory=dict,
-        description="Extra inputs for the trade-off engine: heat_need, unemployment, climate_adversity, land_cost_index, time_to_power_years, water_stress",
+        description="Extra inputs for the Social Accord trade-off engine: land, water, jobs, heat and community context",
     )
 
 

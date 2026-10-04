@@ -62,7 +62,7 @@ class BatchAnalysis(BaseModel):
 SYSTEM_PROMPT = """You analyze public information about data center projects in the United States for site planners and real estate developers.
 
 For every numbered item, return one analysis object:
-- relevant: true only if the item is about a specific or proposed US data center, data center policy (tax incentives, moratoria, zoning, utility rates), or community reaction to data centers. Generic tech or stock-market news is not relevant.
+- relevant: true only if the item is about a specific or proposed US data center or AI data center, data center policy (tax incentives, moratoria, zoning, utility rates), or community reaction to data centers. Generic AI product, stock-market, or hashtag-only tech posts are not relevant.
 - stance: the item's position toward building data centers in that place. support, oppose, neutral (factual reporting), or mixed.
 - topics: the issues raised, most important first, at most 4.
 - event_type: what happened. Use bill_* for legislation, zoning_decision for a local land-use vote, opinion for commentary without a new event.
@@ -110,6 +110,17 @@ _QUOTES = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": 
 
 def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").translate(_QUOTES).lower()).strip()
+
+
+PUNCT_ONLY = re.compile(r"^[\s.!?'\"“”‘’…]+$")
+
+
+def usable_text(value: str | None) -> bool:
+    return bool(value and value.strip() and not PUNCT_ONLY.fullmatch(value.strip()))
+
+
+def usable_sentences(text: str) -> list[str]:
+    return [part.strip() for part in re.split(r"(?<=[.!?])\s+", text or "") if usable_text(part)]
 
 
 def evidence_found(evidence: str, source_text: str) -> bool:
@@ -217,9 +228,11 @@ class RulesProvider:
         return [self.analyze_one(i, it) for i, it in enumerate(items)]
 
     def analyze_one(self, ref: int, it: dict) -> ItemAnalysis:
-        from .keywords import mentions_data_center
+        from .keywords import is_data_center_news
 
-        text = f"{it.get('title') or ''}. {it.get('text') or ''}"
+        title = (it.get("title") or "").strip()
+        body = (it.get("text") or "").strip()
+        text = " ".join(part for part in (title, body) if part)
         oppose = len(self.OPPOSE.findall(text))
         support = len(self.SUPPORT.findall(text))
         stance = "neutral"
@@ -242,18 +255,19 @@ class RulesProvider:
         severity = {"moratorium": 5, "restriction": 3, "project_canceled": 5, "bill_passed": 4, "lawsuit": 4, "zoning_decision": 4,
                     "protest": 3, "public_hearing": 3, "incentive": 3, "bill_introduced": 3, "project_approved": 3,
                     "project_announced": 2}.get(event, 1)
-        sentences = re.split(r"(?<=[.!?])\s+", text)
+        sentences = usable_sentences(text)
         pattern = self.OPPOSE if stance == "oppose" else self.SUPPORT
-        evidence = next((s for s in sentences if pattern.search(s)), sentences[0] if sentences else "")
+        headline = title or (sentences[0] if sentences else "")
+        evidence = next((s for s in sentences if pattern.search(s)), sentences[0] if sentences else headline)
         return ItemAnalysis(
             ref=ref,
-            relevant=mentions_data_center(text),
+            relevant=is_data_center_news(text),
             stance=stance,
             topics=topics,
             event_type=event,
             severity=severity,
             state=it.get("state"),
-            summary=(it.get("title") or sentences[0])[:240],
+            summary=headline[:240],
             evidence=" ".join(evidence.split()[:30]),
             confidence=0.4,
         )
@@ -311,6 +325,12 @@ class Analyzer:
                     analysis, name, model = by_ref.get(ref), provider.name, getattr(provider, "model", "")
                     if analysis is None:  # the model skipped an item
                         analysis, name, model = rules.analyze_one(ref, it), rules.name, rules.model
+                    if not usable_text(analysis.summary) or not usable_text(analysis.evidence):
+                        fallback = rules.analyze_one(ref, it)
+                        if not usable_text(analysis.summary):
+                            analysis.summary = fallback.summary
+                        if not usable_text(analysis.evidence):
+                            analysis.evidence = fallback.evidence
                     verified = evidence_found(analysis.evidence, f"{it.get('title') or ''} {it.get('text') or ''}")
                     if not verified:
                         analysis.confidence = round(analysis.confidence * 0.5, 3)

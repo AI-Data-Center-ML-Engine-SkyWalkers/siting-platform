@@ -108,11 +108,13 @@ class FeatureStore:
             .join(Analysis)
             .options(joinedload(Item.analysis))
             .where(Analysis.relevant.is_(True), Item.published_at >= now - timedelta(days=self.lookback))
-        ).all()
+        ).unique().all()
         counties: dict[str, _Acc] = defaultdict(_Acc)
         states: dict[str, _Acc] = defaultdict(_Acc)
         for item in rows:
             a = item.analysis
+            if not a:
+                continue
             published = item.published_at if item.published_at.tzinfo else item.published_at.replace(tzinfo=timezone.utc)
             age = max(0.0, (now - published).total_seconds() / 86400)
             decay = 0.5 ** (age / self.half_life)

@@ -23,26 +23,39 @@ class OpenStatesCollector(Collector):
     requires = ("openstates_api_key",)
     URL = "https://v3.openstates.org/bills"
 
+    QUERIES = ('"data center"', '"AI data center"')
+
     async def collect(self, client: httpx.AsyncClient, since: datetime) -> list[RawItem]:
         items: list[RawItem] = []
-        for page in range(1, 6):
-            params = [
-                ("q", '"data center"'),
-                ("sort", "updated_desc"),
-                ("updated_since", since.strftime("%Y-%m-%d")),
-                ("per_page", "50"),
-                ("page", str(page)),
-                ("include", "abstracts"),
-                ("include", "sources"),
-            ]
-            response = await self.polite_get(
-                client, self.URL, params=params, headers={"X-API-KEY": self.settings.openstates_api_key}
-            )
-            response.raise_for_status()
-            data = response.json()
-            items.extend(self.parse_bill(b) for b in data.get("results", []))
-            if page >= (data.get("pagination") or {}).get("max_page", 1):
-                break
+        seen: set[str] = set()
+        for query in self.QUERIES:
+            for page in range(1, 6):
+                params = [
+                    ("q", query),
+                    ("sort", "updated_desc"),
+                    ("updated_since", since.strftime("%Y-%m-%d")),
+                    ("per_page", "20"),
+                    ("page", str(page)),
+                    ("include", "abstracts"),
+                    ("include", "sources"),
+                ]
+                response = await self.polite_get(
+                    client, self.URL, params=params, headers={"X-API-KEY": self.settings.openstates_api_key}
+                )
+                if response.status_code == 400:
+                    log.warning("openstates: HTTP 400 for %s: %s", query, response.text[:300])
+                    break
+                response.raise_for_status()
+                data = response.json()
+                for bill in data.get("results", []):
+                    item = self.parse_bill(bill)
+                    key = item.external_id or item.url
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    items.append(item)
+                if page >= (data.get("pagination") or {}).get("max_page", 1):
+                    break
         return items
 
     def parse_bill(self, b: dict) -> RawItem:

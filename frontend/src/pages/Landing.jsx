@@ -1,4 +1,4 @@
-import { MapPinned, Radar, SlidersHorizontal } from 'lucide-react';
+import { Location, Radar, Scales } from '@carbon/icons-react';
 import { Link } from 'react-router-dom';
 import { rankSites } from '../api/client.js';
 import Contours from '../components/Contours.jsx';
@@ -10,7 +10,7 @@ const STEPS = [
   ['Collect public data', 'Grid carbon, water stress, climate risk, land and transmission from government datasets.'],
   ['Score every site', 'Our model weighs each factor and ranks candidate sites on sustainability.'],
   ['Listen to communities', 'News, bills, council agendas and public posts adjust the ranking up or down.'],
-  ['Weigh your trade-offs', 'You decide how much speed, cost, community and local benefit matter.'],
+  ['Weigh your trade-offs', 'Balance economic, social and ecological value, and keep a do-no-harm floor so one gain cannot hide a wrecked water cycle.'],
   ['Stay alerted', 'Hear about moratoria, incentives and shifts in local sentiment as they happen.'],
 ];
 
@@ -30,16 +30,18 @@ export default function Landing() {
   return (
     <>
       <section className="hero">
+        <div className="hero-glow" aria-hidden="true" />
         <Contours />
         <div className="wrap hero-inner">
           <div className="hero-copy">
+            <p className="eyebrow">Sustainable siting for digital infrastructure</p>
             <h1>Find where the next data center belongs.</h1>
             <p className="lede">
-              Groundwork ranks US sites on clean power, water, climate risk and community support, then tells you when local laws or sentiment change.
+              SitewellEco² ranks US sites on clean power, water, climate risk and community support, then tells you when local laws or sentiment change.
             </p>
             <div className="row">
-              <Link to="/sites" className="btn btn-primary"><MapPinned aria-hidden="true" />Find a site</Link>
-              <Link to="/pulse" className="btn btn-quiet"><Radar aria-hidden="true" />Check community pulse</Link>
+              <Link to="/sites" className="btn btn-primary"><Location size={20} aria-hidden="true" />Find a site</Link>
+              <Link to="/pulse" className="btn btn-quiet"><Radar size={20} aria-hidden="true" />Check community pulse</Link>
             </div>
           </div>
           <figure className="hero-map" style={{ margin: 0 }}>
@@ -67,19 +69,19 @@ export default function Landing() {
           </div>
           <div className="engines">
             <div className="engine">
-              <span className="icon"><MapPinned aria-hidden="true" /></span>
+              <span className="icon"><Location size={20} aria-hidden="true" /></span>
               <h3>Site finder</h3>
               <p>Ranks every candidate site with the scoring model, then moves sites up or down based on what their communities are saying.</p>
               <Link to="/sites">Open the site finder</Link>
             </div>
             <div className="engine">
-              <span className="icon"><SlidersHorizontal aria-hidden="true" /></span>
+              <span className="icon"><Scales size={20} aria-hidden="true" /></span>
               <h3>Trade-offs</h3>
-              <p>Set what matters for your project, including what a site gives back: waste heat for cold towns, and jobs where work is scarce.</p>
+              <p>Balance economic, social and ecological value for each place, from tax revenue and power bills to jobs, health, water and biodiversity.</p>
               <Link to="/tradeoffs">Explore trade-offs</Link>
             </div>
             <div className="engine">
-              <span className="icon"><Radar aria-hidden="true" /></span>
+              <span className="icon"><Radar size={20} aria-hidden="true" /></span>
               <h3>Community pulse</h3>
               <p>Search news, bills, council agendas and public posts about data centers, with plain-language summaries and live alerts.</p>
               <Link to="/pulse">Check the pulse</Link>

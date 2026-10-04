@@ -15,11 +15,11 @@ export const FACTORS = [
   ['tx_km', 'power', 'Distance to 230 kV+ line', 'low', 'km'],
   ['time_to_power', 'power', 'Time to power', 'low', 'years'],
   ['surplus_hours', 'power', 'Surplus renewable hours', 'high', '% of hours'],
-  ['water_stress', 'water', 'Baseline water stress', 'low', '0-5'],
+  ['water_stress', 'water', 'Baseline water stress', 'low', 'out of 5'],
   ['plant_water', 'water', 'Power-plant water use', 'low', 'L/kWh'],
-  ['hazard_risk', 'climate', 'Natural hazard risk', 'low', '0-100'],
+  ['hazard_risk', 'climate', 'Natural hazard risk', 'low', 'out of 100'],
   ['free_cooling', 'cooling', 'Free-cooling hours', 'high', '% of hours'],
-  ['heat_reuse', 'cooling', 'Heat reuse potential', 'high', '0-100'],
+  ['heat_reuse', 'cooling', 'Heat reuse potential', 'high', 'out of 100'],
   ['reuse_km', 'land', 'Distance to brownfield or retired plant', 'low', 'km'],
   ['opposition', 'community', 'Opposition signals', 'low', 'count'],
   ['unemployment', 'community', 'Local economic need', 'high', '%'],
@@ -150,87 +150,242 @@ export function rerank(sites) {
   }));
 }
 
-// ---------- Trade-off engine ----------
-export const OBJECTIVE_LABELS = {
-  sustainability: 'Sustainability',
-  speed_to_power: 'Speed to power',
-  cost: 'Cost',
-  community: 'Community acceptance',
-  ecosystem: 'Ecosystem benefit',
+// ---------- Social Accord trade-off engine (mirrors backend/app/tradeoff/engine.py) ----------
+export const DIMENSIONS = ['economic', 'social', 'ecological'];
+export const DIMENSION_META = {
+  economic: { label: 'Economic', blurb: 'Durable local value.' },
+  social: { label: 'Social', blurb: 'Opportunity and wellbeing.' },
+  ecological: { label: 'Ecological', blurb: 'Healthy natural systems.' },
 };
-const OBJECTIVES = Object.keys(OBJECTIVE_LABELS);
+export const INDICATORS = [
+  ['tax_revenue', 'economic', 'Tax revenue', 'Tax', 'Projected property tax minus abatements from incentive bills', 'estimated'],
+  ['price_stability', 'economic', 'Price stability', 'Prices', 'Residential electricity rate risk from utility rate cases and large-load tariffs', 'estimated'],
+  ['capital_investment', 'economic', 'Capital investment', 'Capital', 'Project investment relative to county GDP', 'estimated'],
+  ['economic_efficiency', 'economic', 'Economic efficiency', 'Efficiency', 'Cost per MW: land, power price and time to power', 'estimated'],
+  ['gdp_contribution', 'economic', 'GDP contribution', 'GDP', 'County GDP plus indirect effects from the jobs multiplier', 'estimated'],
+  ['jobs_wages', 'economic', 'Job creation and wages', 'Jobs', 'Direct and indirect jobs against BLS wages and Census unemployment', 'measured'],
+  ['digital_equity', 'social', 'Digital equity', 'Digital', 'Whether the project brings fiber to unserved areas on the FCC broadband map', 'estimated'],
+  ['access_utilities', 'social', 'Access to utilities', 'Utilities', 'Shared grid and water upgrades that also serve residents', 'estimated'],
+  ['education', 'social', 'Education', 'Education', 'Local colleges (NCES) and committed training programs', 'estimated'],
+  ['sense_of_place', 'social', 'Sense of place', 'Place', 'Distance to historic sites, parks and homes, and zoning fit', 'estimated'],
+  ['health_wellbeing', 'social', 'Health and wellbeing', 'Health', 'Homes in the noise range, generator emissions and CDC PLACES health data', 'estimated'],
+  ['equity_inclusion', 'social', 'Equity and inclusion', 'Equity', 'Whether burdens fall on vulnerable neighborhoods (CDC Social Vulnerability Index)', 'measured'],
+  ['carbon_climate', 'ecological', 'Carbon and climate', 'Carbon', 'Grid marginal emissions, embodied carbon and heat reuse', 'measured'],
+  ['air_quality', 'ecological', 'Air quality', 'Air', 'EPA nonattainment areas and backup generator emissions', 'measured'],
+  ['water_quality', 'ecological', 'Water quality', 'Water Q', 'EPA impaired waters (ATTAINS) and cooling discharge', 'estimated'],
+  ['water_cycle', 'ecological', 'Water cycle', 'Water', 'WRI Aqueduct water stress and cooling water consumption', 'measured'],
+  ['biodiversity', 'ecological', 'Biodiversity', 'Wildlife', 'Critical habitat and protected areas', 'estimated'],
+  ['soil', 'ecological', 'Soil', 'Soil', 'Prime farmland on the USDA soil survey', 'measured'],
+];
+const INDICATOR_IDS = INDICATORS.map((r) => r[0]);
+const INDICATOR_META = Object.fromEntries(INDICATORS.map(([i, d, label, short, how, kind]) => [i, { dimension: d, label, short, how, kind }]));
+const BY_DIMENSION = Object.fromEntries(DIMENSIONS.map((d) => [d, INDICATORS.filter((r) => r[1] === d).map((r) => r[0])]));
+const TENSION_PAIRS = [
+  ['tax_revenue', 'price_stability'], ['capital_investment', 'sense_of_place'],
+  ['economic_efficiency', 'water_cycle'], ['jobs_wages', 'water_cycle'], ['jobs_wages', 'soil'],
+  ['access_utilities', 'price_stability'], ['economic_efficiency', 'equity_inclusion'],
+  ['carbon_climate', 'water_cycle'],
+];
 
 const base = {
-  objectives: { sustainability: 40, speed_to_power: 20, cost: 15, community: 15, ecosystem: 10 },
-  heat_reuse_value: 0.5, jobs_value: 0.5, jobs_multiplier: 2.0, max_water_stress: 4.0,
-  max_time_to_power_years: null, min_sustainability: null, exclude_moratoria: true,
+  dimensions: { economic: 34, social: 33, ecological: 33 },
+  indicators: {},
+  min_indicator: 30,
+  exclude_moratoria: true,
   states_include: [], states_exclude: [], max_per_state: 2, top_n: 10,
 };
 export const TRADEOFF_PRESETS = {
   balanced: base,
-  speed: { ...base, objectives: { sustainability: 25, speed_to_power: 45, cost: 20, community: 10, ecosystem: 0 } },
-  community: { ...base, objectives: { sustainability: 25, speed_to_power: 10, cost: 10, community: 40, ecosystem: 15 } },
-  ecosystem: { ...base, objectives: { sustainability: 30, speed_to_power: 10, cost: 10, community: 15, ecosystem: 35 }, heat_reuse_value: 0.9, jobs_value: 0.9, jobs_multiplier: 2.5 },
+  economic: { ...base, dimensions: { economic: 60, social: 20, ecological: 20 } },
+  social: { ...base, dimensions: { economic: 20, social: 60, ecological: 20 } },
+  ecological: { ...base, dimensions: { economic: 20, social: 20, ecological: 60 } },
+};
+export const ACCORD_DISCLAIMER = 'SitewellEco² does not rate communities or certify projects. It shows how well a project fits this place, and what it gives back. Values are labeled measured or estimated. Measured values in this demo are illustrative.';
+
+const clamp100 = (x, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, x));
+const getN = (site, keys, fallback = 0) => {
+  const f = site.factors || {};
+  const a = site.attributes || {};
+  for (const k of keys) {
+    if (f[k] != null) return Number(f[k]);
+    if (a[k] != null && !Number.isNaN(Number(a[k]))) return Number(a[k]);
+  }
+  return fallback;
 };
 
-const clamp = (x, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
+function accordProfiles(site, community) {
+  const carbon = getN(site, ['carbon'], 420);
+  const tx = getN(site, ['tx_km'], 8);
+  const ttp = getN(site, ['time_to_power', 'time_to_power_years'], 4);
+  const surplus = getN(site, ['surplus_hours'], 4);
+  const water = getN(site, ['water_stress'], 2);
+  const plantW = getN(site, ['plant_water'], 1.5);
+  const hazard = getN(site, ['hazard_risk'], 40);
+  const freeC = getN(site, ['free_cooling'], 70);
+  const heat = getN(site, ['heat_reuse'], 40);
+  const reuseKm = getN(site, ['reuse_km'], 10);
+  const opposition = getN(site, ['opposition'], 3);
+  const unemp = getN(site, ['unemployment'], 4);
+  const land = getN(site, ['land_cost_index'], 50);
+  const heatNeed = getN(site, ['heat_need'], 40);
+  const adversity = getN(site, ['climate_adversity'], 40);
+  const hint = getN(site, ['community_hint'], 0);
 
-function objectiveScores(site, community, p) {
-  const a = site.attributes || {};
+  const taxAbate = clamp100(12 + 0.25 * land + 15 * Math.max(0, -hint), 8, 55);
+  const rateRisk = clamp100(12 + carbon / 16 + ttp * 5 + Math.max(0, 8 - surplus) * 2, 8, 90);
+  const invGdp = clamp100(28 + (100 - land) * 0.38 + unemp * 4.2, 15, 95);
+  const college = clamp100(22 + Math.max(0, 20 - reuseKm) * 1.6 + (land > 50 ? 18 : 6), 10, 90);
+  const placePressure = clamp100(12 + opposition * 7 + land * 0.22, 8, 92);
+  const svi = clamp100(16 + unemp * 5.2 + Math.max(0, -hint) * 22, 10, 92);
+  const broadbandGap = clamp100(12 + (100 - land) * 0.28 + unemp * 2.2, 8, 85);
+  const farmland = clamp100(8 + (100 - land) * 0.42 + water * 6, 5, 92);
+  const habitat = clamp100(16 + Math.max(0, reuseKm - 4) * 2.2 + water * 3.5, 8, 90);
+  const air = clamp100(12 + carbon / 28 + (100 - freeC) * 0.18 + opposition * 2.5, 8, 90);
+  const carbonN = clamp100((carbon - 200) / 7);
+  const ttpN = clamp100(((ttp - 1) / 6) * 100);
+  const txN = clamp100((tx / 20) * 100);
+  const plantN = clamp100((plantW / 3) * 100);
+  const waterN = clamp100((water / 5) * 100);
+  const sentiment = Number(community.net_sentiment || 0);
+  const restriction = Number(community.restriction_signal || 0);
+  const incentive = Number(community.incentive_signal || 0);
+  const moratorium = Boolean(community.active_moratorium);
+
+  const baseline = {
+    tax_revenue: 48,
+    price_stability: clamp100(100 - 0.55 * rateRisk),
+    capital_investment: 20,
+    economic_efficiency: 50,
+    gdp_contribution: 32,
+    jobs_wages: clamp100(34 + unemp * 2.2),
+    digital_equity: clamp100(100 - broadbandGap),
+    access_utilities: clamp100(62 - 0.35 * ttpN),
+    education: college,
+    sense_of_place: clamp100(100 - placePressure),
+    health_wellbeing: clamp100(100 - 0.45 * air - 0.28 * hazard),
+    equity_inclusion: clamp100(100 - svi),
+    carbon_climate: clamp100(100 - carbonN),
+    air_quality: clamp100(100 - air),
+    water_quality: clamp100(100 - 0.55 * plantN - 0.25 * waterN),
+    water_cycle: clamp100(100 - waterN),
+    biodiversity: clamp100(100 - habitat),
+    soil: clamp100(100 - 0.55 * farmland),
+  };
+  const heatBonus = 0.22 * (heat / 100) * (heatNeed / 100);
+  const jobsReach = clamp100(20 + unemp * 8, 15, 80);
+  const sharedUpgrades = clamp100(18 + ttpN * 0.25 + txN * 0.15);
+  const whoPays = clamp100(rateRisk * 0.35 + taxAbate * 0.4);
+  const project = {
+    tax_revenue: clamp100(baseline.tax_revenue + 0.42 * invGdp * (1 - taxAbate / 100) - incentive * 12),
+    price_stability: clamp100(baseline.price_stability - 0.38 * rateRisk + 0.08 * surplus),
+    capital_investment: clamp100(0.25 * baseline.capital_investment + 0.75 * invGdp),
+    economic_efficiency: clamp100(100 - 0.38 * land - 0.34 * ttpN - 0.20 * txN - 0.08 * carbonN),
+    gdp_contribution: clamp100(28 + 0.45 * invGdp + 0.28 * jobsReach),
+    jobs_wages: clamp100(22 + jobsReach + Math.max(0, hint) * 8),
+    digital_equity: clamp100(baseline.digital_equity + 0.45 * broadbandGap),
+    access_utilities: clamp100(baseline.access_utilities + sharedUpgrades - whoPays),
+    education: clamp100(college + 8 + Math.max(0, hint) * 6),
+    sense_of_place: clamp100(baseline.sense_of_place - opposition * 4 - 0.15 * invGdp + (reuseKm <= 3 ? 12 : 0) + sentiment * 8 - restriction * 18),
+    health_wellbeing: clamp100(baseline.health_wellbeing - 0.18 * air - 0.12 * adversity + 0.15 * freeC),
+    equity_inclusion: clamp100(baseline.equity_inclusion - 0.22 * svi + 0.12 * jobsReach - (land < 25 && svi > 50 ? 8 : 0)),
+    carbon_climate: clamp100(baseline.carbon_climate + 18 * heatBonus + 0.08 * surplus - 0.12 * carbonN),
+    air_quality: clamp100(baseline.air_quality - 0.16 * (100 - freeC) + 0.05 * surplus),
+    water_quality: clamp100(baseline.water_quality - 0.22 * plantN - 0.10 * waterN),
+    water_cycle: clamp100(baseline.water_cycle - 0.28 * waterN - 0.12 * plantN + 8 * heatBonus),
+    biodiversity: clamp100(baseline.biodiversity - 0.18 * habitat + (reuseKm <= 3 ? 10 : -6)),
+    soil: clamp100(baseline.soil - 0.32 * farmland + (reuseKm <= 3 ? 12 : 0)),
+  };
+  if (moratorium) {
+    project.sense_of_place = r1(clamp100(project.sense_of_place * 0.35));
+    project.equity_inclusion = r1(clamp100(project.equity_inclusion * 0.7));
+  }
   const notes = [];
-  const ttp = Number(a.time_to_power_years ?? 4);
-  const tx = Number(a.tx_km ?? 10);
-  const speed = 100 * (0.7 * clamp(1 - (ttp - 1) / 6) + 0.3 * clamp(1 - tx / 20));
-  const heatNeed = Number(a.heat_need || 0) / 100;
-  const adversity = Number(a.climate_adversity || 0) / 100;
-  const land = Number(a.land_cost_index ?? 50) / 100;
-  const offset = p.heat_reuse_value * heatNeed;
-  const cost = 100 * (1 - (0.6 * land + 0.4 * adversity * (1 - offset)));
-  if (adversity >= 0.6 && offset >= 0.4) notes.push('Harsh climate, but strong local heating demand can use the waste heat, which offsets part of the penalty.');
-  const communityScore = community.active_moratorium ? 0 : clamp(0.5 + 0.5 * (community.net_sentiment || 0) - 0.3 * (community.restriction_signal || 0)) * 100;
-  const unemployment = Number(a.unemployment || 0);
-  const jobsNeed = clamp((unemployment - 2.5) / 6);
-  const jobsReach = clamp(p.jobs_multiplier / 3);
-  const wsum = p.heat_reuse_value + p.jobs_value;
-  const ecosystem = wsum ? 100 * ((p.heat_reuse_value * heatNeed + p.jobs_value * jobsNeed * jobsReach) / wsum) : 0;
-  if (jobsNeed >= 0.4 && p.jobs_value > 0) notes.push(`Unemployment is ${unemployment.toFixed(1)}%: about ${Number(p.jobs_multiplier).toFixed(1)} jobs per direct job (hotels, travel, services) count in its favor.`);
-  if (heatNeed >= 0.7 && p.heat_reuse_value > 0) notes.push('High heating demand nearby: waste heat could warm local buildings or greenhouses.');
-  const s = { sustainability: Number(site.final_score ?? site.score ?? 0), speed_to_power: speed, cost, community: communityScore, ecosystem };
-  return [Object.fromEntries(Object.entries(s).map(([k, x]) => [k, r1(x)])), notes];
+  if (taxAbate >= 30 && project.tax_revenue < baseline.tax_revenue + 8) notes.push('Incentives attract the project but shrink the tax that stays local.');
+  if (water >= 3.5) notes.push('Water stress is high: evaporative cooling would save energy but use water the place cannot spare.');
+  if (reuseKm <= 3) notes.push('Reusing a brownfield or retired plant protects farmland and habitat relative to a greenfield.');
+  if (heatNeed >= 70 && heat >= 50) notes.push('Local heating demand can take waste heat, which is one way the project gives carbon and climate value back.');
+  if (unemp >= 5.5) notes.push(`Unemployment is ${unemp.toFixed(1)}%, so job creation and wages count more here than in a tight labor market.`);
+  if (svi >= 55 && land < 30) notes.push('Cheap land here overlaps a more vulnerable community, so equity and inclusion is a live tension.');
+  return [Object.fromEntries(Object.entries(baseline).map(([k, v]) => [k, r1(v)])), Object.fromEntries(Object.entries(project).map(([k, v]) => [k, r1(v)])), notes];
+}
+
+function tensionsFor(baseline, project) {
+  const found = [];
+  for (const [a, b] of TENSION_PAIRS) {
+    const da = project[a] - baseline[a];
+    const db = project[b] - baseline[b];
+    const la = INDICATOR_META[a].label;
+    const lb = INDICATOR_META[b].label;
+    if (da >= 8 && db <= -8) found.push(`${la} up, ${lb} down`);
+    else if (db >= 8 && da <= -8) found.push(`${lb} up, ${la} down`);
+  }
+  return found;
+}
+
+function normalize(raw, keys) {
+  const total = keys.reduce((a, k) => a + Math.max(0, raw[k] || 0), 0) || 1;
+  return Object.fromEntries(keys.map((k) => [k, Math.max(0, raw[k] || 0) / total]));
+}
+
+function dimensionScores(project, p) {
+  const scores = {};
+  for (const d of DIMENSIONS) {
+    const ids = BY_DIMENSION[d];
+    const inner = normalize(Object.fromEntries(ids.map((i) => [i, Number(p.indicators?.[i] ?? 1)])), ids);
+    scores[d] = r1(ids.reduce((a, i) => a + inner[i] * project[i], 0));
+  }
+  return scores;
 }
 
 export function evaluateTradeoff(params, useCommunity = true) {
-  const p = { ...base, ...params };
+  const p = { ...base, ...params, dimensions: { ...base.dimensions, ...(params?.dimensions || {}) }, indicators: { ...(params?.indicators || {}) } };
   const raw = scoreSites();
   const adjusted = Object.fromEntries(rerank(raw).map((s) => [s.site_id, s]));
   const sites = raw.map((s) => (useCommunity && adjusted[s.site_id] ? adjusted[s.site_id] : s));
-  const totalW = OBJECTIVES.reduce((a, k) => a + Math.max(0, p.objectives[k] || 0), 0) || 1;
-  const weights = Object.fromEntries(OBJECTIVES.map((k) => [k, Math.max(0, p.objectives[k] || 0) / totalW]));
-  const active = OBJECTIVES.filter((k) => weights[k] > 0);
+  const dimW = normalize(p.dimensions, DIMENSIONS);
+  const indicatorWeights = {};
+  for (const d of DIMENSIONS) {
+    const ids = BY_DIMENSION[d];
+    const inner = normalize(Object.fromEntries(ids.map((i) => [i, Number(p.indicators[i] ?? 1)])), ids);
+    ids.forEach((i) => { indicatorWeights[i] = dimW[d] * inner[i]; });
+  }
   const feasible = [];
   const excluded = [];
   for (const s of sites) {
-    const a = s.attributes || {};
     const community = sampleCommunity(s);
     let reason = null;
     if (s.excluded) reason = s.exclusion_reason || 'Excluded by the scoring model';
     else if (p.states_include.length && !p.states_include.includes(s.state)) reason = 'Outside the states you selected';
     else if (p.states_exclude.includes(s.state)) reason = 'In a state you excluded';
-    else if (p.max_water_stress != null && a.water_stress > p.max_water_stress) reason = `Water stress ${a.water_stress} is above your limit of ${p.max_water_stress}`;
-    else if (p.max_time_to_power_years != null && a.time_to_power_years > p.max_time_to_power_years) reason = `Time to power ${a.time_to_power_years} years is above your limit`;
-    else if (p.min_sustainability != null && (s.final_score ?? s.score) < p.min_sustainability) reason = 'Sustainability score below your minimum';
+    else if (p.exclude_moratoria && community.active_moratorium) reason = 'Active moratorium';
     if (reason) { excluded.push({ site_id: s.site_id, name: s.name, state: s.state, reason }); continue; }
-    const [objectives, notes] = objectiveScores(s, community, p);
-    const contributions = Object.fromEntries(OBJECTIVES.map((k) => [k, Math.round(weights[k] * objectives[k] * 100) / 100]));
+    const [baseline, project, notes] = accordProfiles(s, community);
+    if (p.min_indicator != null) {
+      const weak = INDICATOR_IDS.filter((i) => project[i] < p.min_indicator);
+      if (weak.length) {
+        const worst = weak.reduce((a, b) => (project[a] < project[b] ? a : b));
+        excluded.push({
+          site_id: s.site_id, name: s.name, state: s.state,
+          reason: `${INDICATOR_META[worst].label} is ${Math.round(project[worst])}, below the do-no-harm floor of ${Math.round(p.min_indicator)}`,
+        });
+        continue;
+      }
+    }
+    const dims = dimensionScores(project, p);
     feasible.push({
       site_id: s.site_id, name: s.name, state: s.state, county_fips: s.county_fips, lat: s.lat, lon: s.lon,
-      utility: Math.round(Object.values(contributions).reduce((x, y) => x + y, 0) * 100) / 100,
-      objectives, contributions, notes,
+      utility: r1(DIMENSIONS.reduce((a, d) => a + dimW[d] * dims[d], 0)),
+      dimensions: dims, indicators: project, baseline,
+      deltas: Object.fromEntries(INDICATOR_IDS.map((i) => [i, r1(project[i] - baseline[i])])),
+      tensions: tensionsFor(baseline, project), notes,
     });
   }
   feasible.sort((a, b) => b.utility - a.utility);
+  const best = Object.fromEntries(INDICATOR_IDS.map((i) => [i, feasible.length ? Math.max(...feasible.map((r) => r.indicators[i])) : 100]));
+  feasible.forEach((r) => { r.best = Object.fromEntries(INDICATOR_IDS.map((i) => [i, r1(best[i])])); });
+  const active = DIMENSIONS.filter((d) => dimW[d] > 0);
   for (const r of feasible) {
-    r.pareto = !feasible.some((o) => o !== r && active.every((k) => o.objectives[k] >= r.objectives[k]) && active.some((k) => o.objectives[k] > r.objectives[k]));
+    r.pareto = !feasible.some((o) => o !== r && active.every((k) => o.dimensions[k] >= r.dimensions[k]) && active.some((k) => o.dimensions[k] > r.dimensions[k]));
   }
   const perState = {};
   let shortlist = 0;
@@ -242,9 +397,15 @@ export function evaluateTradeoff(params, useCommunity = true) {
       perState[r.state] = (perState[r.state] || 0) + 1;
       shortlist += 1;
     }
-    r.strengths = Object.entries(r.contributions).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => OBJECTIVE_LABELS[k]);
+    r.strengths = Object.entries(r.dimensions).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => DIMENSION_META[k].label);
   });
-  return { weights, results: feasible, excluded, objective_labels: OBJECTIVE_LABELS, illustrative: true, model_version: 'mock-geomean-v1' };
+  return {
+    weights: dimW, indicator_weights: indicatorWeights, results: feasible, excluded,
+    best_profile: Object.fromEntries(INDICATOR_IDS.map((i) => [i, r1(best[i])])),
+    indicators: INDICATORS.map(([id, dimension, label, short, how, kind]) => ({ id, dimension, label, short, how, kind })),
+    dimensions: DIMENSION_META, disclaimer: ACCORD_DISCLAIMER,
+    illustrative: true, model_version: 'mock-geomean-v1',
+  };
 }
 
 export const SAMPLE_BETAS = BETAS;

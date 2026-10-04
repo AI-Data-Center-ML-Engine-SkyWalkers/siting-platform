@@ -23,7 +23,7 @@ from .embeddings import HashingEmbedder, get_embedder, to_bytes
 from .enrich import fetch_text
 from .features import FeatureStore
 from .geo import find_county, geotag
-from .keywords import mentions_data_center
+from .keywords import is_data_center_news
 from .normalize import canonicalize_url, clean_text, content_hash, domain_of, jaccard, shingles
 from .sources import JetstreamListener, build_collectors
 
@@ -101,9 +101,8 @@ class Pipeline:
                 if not raw.url:
                     continue
                 title, text = clean_text(raw.title, 1000), clean_text(raw.text)
-                official = raw.source_type in ("legislation", "government")
-                if not official and not mentions_data_center(title, text):
-                    continue  # keyword gate: no AI cost for off-topic items
+                if not is_data_center_news(title, text):
+                    continue  # keyword gate: data-center / AI data-center news only
                 canonical = canonicalize_url(raw.url)
                 if canonical in seen_urls:
                     continue

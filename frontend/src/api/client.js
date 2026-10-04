@@ -181,6 +181,33 @@ export async function getAwarenessMap(level = 'state') {
   };
 }
 
+const OPPOSE_EVENTS = new Set(['moratorium', 'restriction', 'lawsuit', 'protest', 'project_canceled']);
+const SUPPORT_EVENTS = new Set(['incentive', 'project_approved', 'project_announced']);
+const WATCH_EVENTS = new Set(['public_hearing', 'zoning_decision', 'bill_introduced', 'bill_advanced', 'bill_passed']);
+function eventTone(eventType, stance) {
+  if (OPPOSE_EVENTS.has(eventType) || (stance === 'oppose' && eventType !== 'other')) return 'against';
+  if (SUPPORT_EVENTS.has(eventType) || stance === 'support') return 'for';
+  if (WATCH_EVENTS.has(eventType)) return 'watch';
+  return 'info';
+}
+
+/** Recent concrete events (not opinions) as GeoJSON points, for the map's events layer. */
+export async function getEvents(days = 180) {
+  if ((await dataMode()) === 'live') return http(`/api/awareness/events${qs({ days })}`);
+  return {
+    type: 'FeatureCollection',
+    features: SAMPLE_ITEMS.filter((i) => i.lat != null && i.analysis.event_type !== 'opinion').map((i) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [i.lon, i.lat] },
+      properties: {
+        id: i.id, title: i.title, summary: i.analysis.summary, event_type: i.analysis.event_type, stance: i.analysis.stance,
+        severity: i.analysis.severity, source_type: i.source_type, outlet: i.outlet, url: i.url, published_at: i.published_at,
+        region: i.region, tone: eventTone(i.analysis.event_type, i.analysis.stance), sample: true,
+      },
+    })),
+  };
+}
+
 export async function getAlerts(limit = 30) {
   if ((await dataMode()) === 'live') return http(`/api/awareness/alerts${qs({ limit })}`);
   return { alerts: SAMPLE_ALERTS.slice(0, limit) };

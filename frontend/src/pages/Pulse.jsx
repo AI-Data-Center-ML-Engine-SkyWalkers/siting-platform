@@ -1,4 +1,4 @@
-import { BadgeCheck, Bell, ExternalLink, FileText, Landmark, Megaphone, MessageSquare, Newspaper, Search, Trash2 } from 'lucide-react';
+import { Bullhorn, Chat, CheckmarkOutline, Document, Launch, Notification, Policy, Rss, Search, TrashCan } from '@carbon/icons-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { createWatchlist, deleteWatchlist, getAwarenessMap, getRegion, getTopics, getWatchlists, searchAwareness } from '../api/client.js';
@@ -7,7 +7,7 @@ import { AlertFeed, LiveDot, SampleBanner, StanceTag, Switch } from '../componen
 import { useAlerts, useAsync } from '../hooks/useData.js';
 import { CREDIBILITY_LABELS, EVENT_LABELS, formatDate, SOURCE_TYPE_LABELS, STATES, timeAgo } from '../lib/format.js';
 
-const SOURCE_ICONS = { legislation: Landmark, government: FileText, news: Newspaper, advocacy: Megaphone, social: MessageSquare };
+const SOURCE_ICONS = { legislation: Policy, government: Document, news: Rss, advocacy: Bullhorn, social: Chat };
 const STANCES = [['', 'All'], ['oppose', 'Opposed'], ['support', 'Supportive'], ['mixed', 'Mixed'], ['neutral', 'Neutral']];
 const ALERT_KINDS = [['moratorium', 'Moratoria'], ['incentive', 'Incentives'], ['policy_change', 'Laws passed'], ['bill', 'Bills'], ['hearing', 'Hearings'], ['protest', 'Protests'], ['sentiment_shift', 'Sentiment shifts'], ['lawsuit', 'Lawsuits']];
 
@@ -44,7 +44,7 @@ export default function Pulse() {
       </div>
 
       <form className="searchbar" role="search" onSubmit={(e) => { e.preventDefault(); setQuery(draft.trim()); }}>
-        <Search aria-hidden="true" />
+        <Search size={20} aria-hidden="true" />
         <label htmlFor="q" className="sr-only">Search</label>
         <input id="q" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Try: water limits, tax exemption, rezoning hearing" />
         <button type="submit" className="btn btn-primary btn-small">Search</button>
@@ -117,21 +117,25 @@ export default function Pulse() {
   );
 }
 
+function usableCopy(value) {
+  return Boolean(value && value.trim() && !/^[\s.!?“”"'‘’…]+$/.test(value.trim()));
+}
+
 function Result({ item }) {
   const a = item.analysis;
-  const Icon = SOURCE_ICONS[item.source_type] || Newspaper;
+  const Icon = SOURCE_ICONS[item.source_type] || Rss;
   const hasLink = item.url && item.url !== '#';
   return (
     <article className="result">
       <div className="result-meta">
-        <span><Icon aria-hidden="true" /> {SOURCE_TYPE_LABELS[item.source_type]}{item.outlet ? `, ${item.outlet}` : ''}</span>
+        <span><Icon size={16} aria-hidden="true" /> {SOURCE_TYPE_LABELS[item.source_type]}{item.outlet ? `, ${item.outlet}` : ''}</span>
         {item.region && <span>{item.region}</span>}
         <time dateTime={item.published_at}>{timeAgo(item.published_at)}</time>
         {item.sample && <span className="tag sample">Sample</span>}
       </div>
-      <h3>{hasLink ? <a href={item.url} target="_blank" rel="noreferrer">{item.title} <ExternalLink size={14} aria-label="opens source" /></a> : item.title}</h3>
-      {a && <p className="summary">{a.summary}</p>}
-      {a?.evidence && (
+      <h3>{hasLink ? <a href={item.url} target="_blank" rel="noreferrer">{item.title} <Launch size={16} aria-label="opens source" style={{ verticalAlign: -2 }} /></a> : item.title}</h3>
+      {usableCopy(a?.summary) && a.summary.trim() !== (item.title || '').trim() && <p className="summary">{a.summary}</p>}
+      {usableCopy(a?.evidence) && (
         <blockquote className="quote" style={{ margin: 0 }}>
           &ldquo;{a.evidence}&rdquo;
           <small>{a.evidence_verified ? 'Quote found in the source' : 'Quote could not be matched to the source; treat with care'}</small>
@@ -142,7 +146,7 @@ function Result({ item }) {
         {a && <span className="tag">{EVENT_LABELS[a.event_type] || a.event_type}</span>}
         {a?.topic_labels?.map((t) => <span className="tag" key={t}>{t}</span>)}
         {item.bill?.bill_number && <span className="tag">{item.bill.bill_number}: {item.bill.latest_action}</span>}
-        {item.corroborated && <span className="tag ok"><BadgeCheck aria-hidden="true" />Reported by 2+ outlets</span>}
+        {item.corroborated && <span className="tag ok"><CheckmarkOutline size={16} aria-hidden="true" />Reported by 2+ outlets</span>}
         <span className="tag" title="How much this source counts toward a region's signals">{CREDIBILITY_LABELS[item.source_type]}</span>
       </div>
     </article>
@@ -208,7 +212,8 @@ function PulseMap({ onPick }) {
     <section className="panel" aria-label="Sentiment by state">
       <div className="panel-title"><h3>Sentiment by state</h3><span className="tiny muted">pick a state</span></div>
       <USMap
-        ariaLabel="States with community signals; red leans opposed, green leans supportive"
+        className="pulse-map"
+        ariaLabel="States with community signals; red leans opposed, teal leans supportive"
         bubbles={regions.map((r) => ({
           id: r.region, lat: r.lat, lon: r.lon, r: 8 + Math.sqrt(r.coverage || 1) * 5, fill: tone(r.net_sentiment),
           title: `${STATES[r.region] || r.name}: ${r.coverage} items, opposition ${Math.round(r.opposition_index * 100)}, support ${Math.round(r.support_index * 100)}`,
@@ -216,7 +221,7 @@ function PulseMap({ onPick }) {
         }))}
         onSelect={onPick}
       />
-      <p className="tiny muted" style={{ marginTop: 6 }}>Red leans opposed, green leans supportive. Bigger circles have more coverage.</p>
+      <p className="tiny muted" style={{ marginTop: 6 }}>Red leans opposed, teal leans supportive. Bigger circles have more coverage.</p>
     </section>
   );
 }
@@ -254,7 +259,7 @@ function Watchlists({ defaultState }) {
 
   return (
     <section className="panel stack" aria-label="Watch a region">
-      <div className="panel-title" style={{ margin: 0 }}><h3><Bell size={16} aria-hidden="true" style={{ verticalAlign: -2 }} /> Watch a region</h3></div>
+      <div className="panel-title" style={{ margin: 0 }}><h3><Notification size={16} aria-hidden="true" style={{ verticalAlign: -2 }} /> Watch a region</h3></div>
       <form className="stack" onSubmit={save}>
         <label className="field" htmlFor="w-state"><span>State</span>
           <select id="w-state" className="select" value={st} onChange={(e) => setSt(e.target.value)}>
@@ -279,7 +284,7 @@ function Watchlists({ defaultState }) {
           {list.map((w) => (
             <li key={w.id} className="row" style={{ justifyContent: 'space-between' }}>
               <span>{w.name}{w.kinds?.length ? `: ${w.kinds.length} alert types` : ''}</span>
-              <button type="button" className="icon-btn" aria-label={`Stop watching ${w.name}`} onClick={async () => { await deleteWatchlist(w.id); setList((l) => l.filter((x) => x.id !== w.id)); }}><Trash2 /></button>
+              <button type="button" className="icon-btn" aria-label={`Stop watching ${w.name}`} onClick={async () => { await deleteWatchlist(w.id); setList((l) => l.filter((x) => x.id !== w.id)); }}><TrashCan size={16} aria-hidden="true" /></button>
             </li>
           ))}
         </ul>

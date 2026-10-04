@@ -13,6 +13,10 @@ export const TOPIC_LABELS = {
   traffic_construction: 'Traffic and construction', environment_climate: 'Environment and climate',
 };
 
+// County centroids for the sample counties (from the backend gazetteer) and state centers
+const COUNTY_XY = {'36089': [44.496, -75.069], '36029': [42.763, -78.732], '53025': [47.205, -119.453], '19153': [41.685, -93.574], '56021': [41.307, -104.689], '17031': [41.840, -87.816], '38015': [46.977, -100.468], '13077': [33.354, -84.763], '51153': [38.704, -77.481], '51107': [39.091, -77.636], '04013': [33.348, -112.493], '18063': [39.770, -86.510], '48375': [35.401, -101.894], '27109': [44.004, -92.401], '39049': [39.968, -83.008], '42063': [40.653, -79.086], '54059': [37.727, -82.135], '02090': [64.810, -146.563], '55101': [42.747, -88.060], '41065': [45.160, -121.167]};
+const STATE_XY = { GA: [32.7, -83.4], VA: [37.5, -78.9] };
+
 const CRED = { legislation: 1.0, government: 0.95, news: 0.8, advocacy: 0.6, social: 0.4 };
 
 function item(id, o) {
@@ -30,6 +34,8 @@ function item(id, o) {
     state: o.state,
     county_fips: o.county_fips || null,
     region: o.region,
+    lat: (COUNTY_XY[o.county_fips] || STATE_XY[o.state] || [null])[0],
+    lon: (COUNTY_XY[o.county_fips] || STATE_XY[o.state] || [null, null])[1],
     credibility: CRED[o.source_type],
     cluster_id: id,
     corroborated: Boolean(o.corroborated),
@@ -142,6 +148,46 @@ export const SAMPLE_ITEMS = [
     excerpt: 'Proposed amendment sets nighttime noise limits at the property line for data center cooling and backup generators. Status: referred to committee.',
     analysis: { stance: 'mixed', topics: ['noise', 'air_quality'], event_type: 'restriction', severity: 3,
       summary: 'Stricter nighttime noise limits for cooling and generators are under review.', evidence: 'sets nighttime noise limits at the property line' } }),
+  item(19, { source: 'gdelt', source_type: 'news', outlet: 'North Country paper (sample)', days: 3, state: 'NY', county_fips: '36089', region: 'St. Lawrence County, NY', corroborated: true,
+    title: 'Town board backs data center at former smelter site',
+    excerpt: 'Board members said the closed industrial site, close to hydropower and an existing substation, could bring back jobs without using farmland.',
+    analysis: { stance: 'support', topics: ['jobs_economy', 'zoning_land_use', 'renewables'], event_type: 'project_announced', severity: 2,
+      summary: 'Local leaders back reusing a closed industrial site next to hydropower.', evidence: 'could bring back jobs without using farmland' } }),
+  item(20, { source: 'bluesky', source_type: 'social', outlet: 'Bluesky', days: 1, state: 'NY', county_fips: '36089', region: 'St. Lawrence County, NY',
+    title: 'Clean hydro and empty industrial land. A data center here makes sense.',
+    excerpt: 'Clean hydro and empty industrial land. A data center here makes sense if they hire locally.',
+    analysis: { stance: 'support', topics: ['renewables', 'jobs_economy'], event_type: 'opinion', severity: 1,
+      summary: 'A resident supports the project if it hires locally.', evidence: 'A data center here makes sense if they hire locally', confidence: 0.7 } }),
+  item(21, { source: 'google_news', source_type: 'news', outlet: 'City daily (sample)', days: 2, state: 'NY', county_fips: '36029', region: 'Erie County, NY',
+    title: 'Residents question noise from planned waterfront data center',
+    excerpt: 'Neighbors asked the planning board to require sound walls and limits on generator testing before approving the waterfront project.',
+    analysis: { stance: 'mixed', topics: ['noise', 'air_quality'], event_type: 'public_hearing', severity: 3,
+      summary: 'Noise and generator testing will be conditions at an upcoming planning board review.', evidence: 'require sound walls and limits on generator testing', event_date: ahead(12) } }),
+  item(22, { source: 'gdelt', source_type: 'news', outlet: 'Regional outlet (sample)', days: 6, state: 'WA', county_fips: '53025', region: 'Grant County, WA',
+    title: 'Utility warns new data center load could strain local grid',
+    excerpt: 'The public utility district said new data center requests exceed planned capacity and may require new transmission before 2030.',
+    analysis: { stance: 'mixed', topics: ['grid_reliability', 'power_bills'], event_type: 'other', severity: 3,
+      summary: 'Grid capacity is the constraint here; expect a wait for new transmission.', evidence: 'may require new transmission before 2030' } }),
+  item(23, { source: 'legistar', source_type: 'government', outlet: 'County board (Legistar)', days: 4, state: 'IA', county_fips: '19153', region: 'Polk County, IA',
+    title: 'Resolution: property tax abatement for data center expansion',
+    excerpt: 'Approves a ten-year property tax abatement tied to a minimum investment and local hiring commitments. Status: approved.',
+    analysis: { stance: 'support', topics: ['tax_breaks', 'jobs_economy'], event_type: 'incentive', severity: 3,
+      summary: 'A local tax abatement is in place, tied to investment and hiring.', evidence: 'ten-year property tax abatement tied to a minimum investment' } }),
+  item(24, { source: 'rss', source_type: 'news', outlet: 'State news service (sample)', days: 8, state: 'WY', county_fips: '56021', region: 'Laramie County, WY',
+    title: 'Data center campus to pair with new wind farm',
+    excerpt: 'The developer plans to buy power from a new wind farm nearby and keep backup generators to monthly testing only.',
+    analysis: { stance: 'support', topics: ['renewables', 'air_quality'], event_type: 'project_announced', severity: 2,
+      summary: 'New wind supply offsets a coal-heavy grid for this campus.', evidence: 'buy power from a new wind farm nearby' } }),
+  item(25, { source: 'google_news', source_type: 'news', outlet: 'Metro daily (sample)', days: 5, state: 'IL', county_fips: '17031', region: 'Cook County, IL',
+    title: 'Council members question data center water and power use',
+    excerpt: 'Members asked for public reporting of water and electricity use before backing the zoning change.',
+    analysis: { stance: 'mixed', topics: ['water', 'power_bills', 'transparency'], event_type: 'zoning_decision', severity: 3,
+      summary: 'Approval may hinge on publishing water and power use.', evidence: 'public reporting of water and electricity use' } }),
+  item(26, { source: 'gdelt', source_type: 'news', outlet: 'Local TV site (sample)', days: 11, state: 'ND', county_fips: '38015', region: 'Burleigh County, ND',
+    title: 'Commission approves land sale for data center',
+    excerpt: 'Commissioners approved the land sale after the developer committed to local hiring and road repairs.',
+    analysis: { stance: 'support', topics: ['jobs_economy', 'traffic_construction'], event_type: 'project_approved', severity: 3,
+      summary: 'Land is approved, with commitments on hiring and road repairs.', evidence: 'approved the land sale after the developer committed to local hiring' } }),
 ];
 
 export const SAMPLE_ALERTS = [

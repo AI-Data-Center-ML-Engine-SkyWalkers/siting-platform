@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.awareness.analyze import RulesProvider, evidence_found
+from app.awareness.keywords import is_data_center_news, mentions_data_center
 from app.awareness.base import RawItem
 from app.awareness.geo import geotag, state_from_text
 from app.awareness.normalize import canonicalize_url
@@ -104,9 +105,27 @@ def test_jetstream_filter():
     assert JetstreamListener.parse_event(event) is None
 
 
+def test_data_center_news_gate():
+    assert is_data_center_news("Utah survey shows most oppose a new data center")
+    assert is_data_center_news("County pauses AI data center applications pending a state study")
+    assert mentions_data_center("Gemini app cuts free access # DataCenters # AIEthics")
+    assert not is_data_center_news("Gemini app cuts free access # DataCenters # AIEthics")
+    assert not is_data_center_news("Stock market rallies on chip earnings")
+
+
 def test_rules_provider_classifies():
     r = RulesProvider().analyze_one(0, {"title": "Residents protest data center plan over water use", "text": "", "source_type": "news"})
     assert r.relevant and r.stance == "oppose" and r.event_type == "protest" and "water" in r.topics
+
+
+def test_rules_provider_empty_title_not_dot():
+    r = RulesProvider().analyze_one(0, {
+        "title": "",
+        "text": "Trump Promotes Data Centers at Rally With Republican Facing Heat on Them https://www.nytimes.com/story",
+        "source_type": "social",
+    })
+    assert r.summary.startswith("Trump Promotes Data Centers")
+    assert r.evidence.startswith("Trump Promotes Data Centers")
 
 
 def test_pipeline_end_to_end(pipeline):
@@ -119,9 +138,11 @@ def test_pipeline_end_to_end(pipeline):
                 "Establishes a moratorium on new data centers in Loudoun County. Latest action: passed House.",
                 NOW - timedelta(days=2), state="VA"),
         RawItem("gdelt", "news", "https://c.example.com/3", "Stock market rallies on chip earnings", "Nothing about siting."),
+        RawItem("mastodon", "social", "https://d.example.com/4", "Gemini app cutting model access # DataCenters # AIEthics",
+                "Flash-Lite only now. # DataCenters"),
     ]
     inserted, updated = pipeline.ingest(raws)
-    assert len(inserted) == 3  # off-topic story dropped by the keyword gate
+    assert len(inserted) == 3  # off-topic and hashtag-only posts dropped by the keyword gate
     report = asyncio.run(pipeline.process_pending())
     assert report["analyzed"] >= 2 and report["providers"] == ["rules"]
     with pipeline.session_factory() as s:

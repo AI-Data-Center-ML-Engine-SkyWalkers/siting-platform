@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => ({
   plugins: mode === 'preview' ? [react(), viteSingleFile()] : [react()],
   base: mode === 'preview' ? './' : '/',
   build: { outDir: mode === 'preview' ? 'dist-preview' : 'dist' },
+  optimizeDeps: {
+    include: ['react-globe.gl', 'three', 'mapbox-gl'],
+  },
   server: {
     port: 5173,
     proxy: { '/api': { target: 'http://localhost:8000', changeOrigin: true } },
