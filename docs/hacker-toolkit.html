@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SitewellEco2 - The Hacker Toolkit</title>
+  <style>
+    @page { size: letter; margin: 0.38in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #14202b;
+      line-height: 1.42;
+      font-size: 15px;
+      margin: 0;
+      background: #f6f3ec;
+    }
+    .slide { margin: 0; page-break-after: always; break-after: page; }
+    .slide:last-child { page-break-after: auto; break-after: auto; }
+    .bar { height: 8px; border-radius: 8px; margin: 0 0 8px; }
+    .bar.navy { background: linear-gradient(90deg, #0f3d4c, #1f7a6b); }
+    .bar.coral { background: linear-gradient(90deg, #c45c26, #e8a317); }
+    .bar.blue { background: linear-gradient(90deg, #1d4e89, #4b6cb7); }
+    .bar.plum { background: linear-gradient(90deg, #5b2c6f, #c0396b); }
+    .kicker { letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px; font-weight: 700; color: #1f7a6b; margin: 0 0 4px; }
+    h1 { font-size: 30px; margin: 0 0 6px; color: #0f3d4c; }
+    h2 { font-size: 22px; margin: 0 0 8px; color: #0f3d4c; }
+    h3 { font-size: 13px; margin: 0 0 5px; letter-spacing: 0.05em; text-transform: uppercase; }
+    p, li { margin: 0 0 6px; }
+    ul { margin: 0; padding-left: 18px; }
+    a { color: #1d4e89; }
+    .lede { font-size: 17px; color: #2c3e3a; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+    .card {
+      border-radius: 10px;
+      padding: 10px 12px;
+      page-break-inside: avoid;
+      box-shadow: 0 1px 0 rgba(20,32,43,0.06);
+    }
+    .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+    .teal { background: #d8efe8; }
+    .teal h3 { color: #0f3d4c; }
+    .sand { background: #f6e6c8; }
+    .sand h3 { color: #8a4b12; }
+    .sky { background: #d7e6f6; }
+    .sky h3 { color: #1d4e89; }
+    .rose { background: #f8d9d0; }
+    .rose h3 { color: #8b2e1f; }
+    .lilac { background: #e8ddf4; }
+    .lilac h3 { color: #5b2c6f; }
+    .mint { background: #e4f3d2; }
+    .mint h3 { color: #3d5a1f; }
+    .ink { background: #0f3d4c; color: #f6f3ec; }
+    .ink h3, .ink h1, .ink p, .ink a { color: #f6f3ec; }
+    .ink a { text-decoration: underline; }
+    .eq {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 17px;
+      text-align: center;
+      padding: 8px;
+      background: #fff;
+      border-radius: 8px;
+      margin: 6px 0 0;
+    }
+    img.arch { width: 100%; max-height: 6.1in; object-fit: contain; border-radius: 10px; background: #fff; display: block; }
+    .tiny { font-size: 13px; color: #3d4a46; }
+    .stat { font-size: 34px; font-weight: 700; line-height: 1.05; margin: 0 0 4px; }
+    table.comp {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    table.comp th, table.comp td {
+      padding: 7px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e4ddd0;
+      vertical-align: middle;
+    }
+    table.comp th {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #f6f3ec;
+    }
+    table.comp th.cap { background: #0f3d4c; width: 26%; }
+    table.comp th.us { background: #1f7a6b; }
+    table.comp th.them { background: #5b2c6f; }
+    table.comp td.cap { font-weight: 600; color: #0f3d4c; }
+    table.comp tr:nth-child(even) td { background: #f6f3ec; }
+    table.comp tr:nth-child(even) td.us { background: #d8efe8; }
+    table.comp td.us { background: #e7f6f1; font-weight: 700; color: #0f3d4c; }
+    table.comp .yes { color: #1f7a6b; font-weight: 700; }
+    table.comp .part { color: #8a4b12; font-weight: 700; }
+    table.comp .no { color: #8b2e1f; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<section class="slide">
+  <div class="bar navy"></div>
+  <p class="kicker">The Hacker Toolkit</p>
+  <h1>The challenge we took on</h1>
+  <p class="lede">Where should America's next sustainable data center be built, and how will that place feel about it?</p>
+  <div class="grid2">
+    <div class="card ink">
+      <h3>Business impact</h3>
+      <p class="stat">$64 billion</p>
+      <p>That is the value of US data-center projects Data Center Watch found blocked or delayed by local opposition through early 2025. Their later updates put the amount stalled in 2025 alone at about $156 billion. Those reports overlap, so we are not adding them into a bigger headline.</p>
+      <p>The cost of picking the wrong county is years of land options, interconnection studies, and political capital. If a site dies at the hearing or the grid queue, it joins that pile.</p>
+    </div>
+    <div class="card sand">
+      <h3>Team SkyWalkers</h3>
+      <p><strong>Riddhi Raina Prasad</strong><br>rrp4822@nyu.edu<br>Product, interface, and architecture</p>
+      <p><strong>Krish Jani</strong><br>kj2743@nyu.edu<br>Scoring model, research, and the feature store</p>
+      <p>GitHub: <a href="https://github.com/AI-Data-Center-ML-Engine-SkyWalkers">AI-Data-Center-ML-Engine-SkyWalkers</a></p>
+      <p>The live app is in siting-platform. The scoring research lives in ML-Model.</p>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:8px">
+    <div class="card rose">
+      <h3>The problem</h3>
+      <p>The country is racing to site data centers for AI and cloud. Most tools still rank cheap power and tax breaks. That is how Loudoun County filled up and still cannot get on the grid in time. A site that looks perfect on paper is worthless if it cannot get power or a permit.</p>
+    </div>
+    <div class="card teal">
+      <h3>What we built</h3>
+      <p>SitewellEco2 is a working siting platform with three rooms that share one ranking. Site finder is the map. Trade-offs is the iMasons Social Accord. Community pulse is live bills, news, and posts. We score a place on whether it can be built and whether it should be built, then we keep watching after the shortlist is drawn.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar coral"></div>
+  <p class="kicker">1. The Hacker Mindset</p>
+  <h2>Who we are and the bet we made</h2>
+  <div class="grid3">
+    <div class="card teal">
+      <h3>People</h3>
+      <p>Riddhi Raina Prasad (rrp4822@nyu.edu) owns the product, the interface, and how the pieces fit together. Krish Jani (kj2743@nyu.edu) owns the scoring model, the research, and the county feature store.</p>
+      <p>We care about honest community signals and about the iMasons Social Accord, not a green sticker on a cheap megawatt. The goal was to ship a working app and keep every claim tied to a public source.</p>
+    </div>
+    <div class="card sand">
+      <h3>Opportunity</h3>
+      <p>We want the next wave of American data centers to go where the grid, the water, and the people can actually take them. The first idea was a map that ranks counties on clean power. What we added, because siting tools skip them, is permission risk and live public sentiment.</p>
+      <p>The timing is not abstract. Data Center Watch started with 142 opposition groups. By mid-2025 they were tracking far more, and projects kept dying at the queue and the council vote.</p>
+    </div>
+    <div class="card sky">
+      <h3>What we tested</h3>
+      <p>We assumed projects fail on climate or cost. That was wrong. In sixty US projects from 2022 to 2026, the usual death is the grid queue or the county saying no.</p>
+      <p>We assumed a cheap-power map would be enough. That was wrong. Loudoun still wins those maps and still cannot interconnect in time.</p>
+      <p>We assumed communities leave a public trail. That was true. Bills, news, and posts can be tied to a county FIPS code.</p>
+      <p>We assumed a hidden ranker would be trusted. That was wrong for this buyer. They need a score they can explain in a room.</p>
+    </div>
+  </div>
+  <div class="card rose" style="margin-top:8px">
+    <h3>What we came to the hackathon to do</h3>
+    <p>Ship a way to rank a place, trade off what you are willing to give up, and watch that place after you shortlist it. Also ship a scoring contract the ML repo can fill. We built for technology, presentation, innovation, execution, and theme. The public trail is the GitHub org and the live app.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar coral"></div>
+  <p class="kicker">1. The Hacker Mindset</p>
+  <h2>How we go, what we built, why it matters</h2>
+  <div class="grid2">
+    <div class="card mint">
+      <h3>Go</h3>
+      <p>The customer is a site engineer or real estate developer who has to pick a US county and then defend that pick. The offer is simple. Rank the country on whether a campus can live there, then see how the community is moving before anyone buys the land.</p>
+      <p>People reach us through the globe, the satellite map, the shortlist, and GitHub. The thing we want them to do is open Site finder, move the sliders, click a point, and read the pulse.</p>
+    </div>
+    <div class="card lilac">
+      <h3>What we built</h3>
+      <p>Site finder is a 3D globe or a Mapbox satellite map, with sliders and a deep dive when you click a point. Trade-offs uses the iMasons Social Accord: eighteen indicators and a do-no-harm floor so tax revenue cannot hide a wrecked water cycle. Community pulse is news, bills, and posts, summarized by Gemini, with a US map and alerts.</p>
+      <p>FastAPI handles scoring, the community re-rank, awareness, and the Accord engine. The ML path scores 3,109 counties on about a hundred features with a seven-pillar model, and talks to the app through one ranking request.</p>
+    </div>
+    <div class="card sand">
+      <h3>Story</h3>
+      <p>We read blocked, withdrawn, and delayed US projects. They rarely die because the climate model was wrong. They die because the transmission never comes, or the county says no. So we built a rank that treats permission and sentiment as first-class signals, not a footnote at the back of a deck.</p>
+    </div>
+    <div class="card sky">
+      <h3>Where this goes next</h3>
+      <p>First we put the live scoring service behind the same ranking request the app already makes, and we keep collecting. After that we can go down to parcels, and we can add utility-commission dockets. Later, a developer can watch a real portfolio instead of a one-off shortlist.</p>
+      <p>The useful trick is already in: after the model scores a place, community signals move it. A confirmed moratorium takes the site to zero. We also ran two thousand random weight sets. If a county stays in the top ten when the weights jitter, it is stable, not a slider accident.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar blue"></div>
+  <p class="kicker">2. Rapid Ideation</p>
+  <h2>What the customer feels, and the idea we kept</h2>
+  <div class="card rose">
+    <h3>Empathy</h3>
+    <p>I am a site engineer or a real estate developer. I am trying to pick a US county for a large data center before we spend years on land and interconnection. The maps I get are cheap-power heatmaps, because the industry still treats community opposition and water as afterthoughts. That leaves me exposed. I can win a model and still lose the county hearing. In a better world I would see one shortlist that is honest about power, water, climate, land, and whether people will let this get built.</p>
+  </div>
+  <div class="grid4" style="margin-top:8px">
+    <div class="card sky">
+      <h3>See</h3>
+      <p>They see interconnection queues, brownfields, protest headlines, and state moratoria.</p>
+    </div>
+    <div class="card teal">
+      <h3>Think</h3>
+      <p>They wonder whether a county is actually buildable, or only cheap on a heatmap.</p>
+    </div>
+    <div class="card sand">
+      <h3>Feel</h3>
+      <p>They feel urgency from AI load, and risk from a wait that can run many years.</p>
+    </div>
+    <div class="card lilac">
+      <h3>Do</h3>
+      <p>They compare a few states, fly a consultant, and then get surprised by a bill.</p>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:8px">
+    <div class="card rose">
+      <h3>What hurts</h3>
+      <p>Time to power, water stress, farmland fights, and surprise moratoria. Also tools that hide a wrecked pillar behind a high average, so a beautiful score still dies in public.</p>
+    </div>
+    <div class="card mint">
+      <h3>What would help</h3>
+      <p>A shortlist that still looks good when the weights change. A clear view of economic, social, and ecological trade-offs. A pulse that links every claim to a source they can open.</p>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:8px">
+    <div class="card sand">
+      <h3>Round 1</h3>
+      <p>We started with energy and carbon only: the grid mix, time to power, and surplus renewables.</p>
+    </div>
+    <div class="card sky">
+      <h3>Round 2</h3>
+      <p>We added water, hazard, land reuse, and heat recovery. It was still a static map.</p>
+    </div>
+    <div class="card teal">
+      <h3>Round 3</h3>
+      <p>We added permission risk from sixty failed projects and thirty-one moratoria, plus a live community engine. First we rank. Then we re-rank.</p>
+    </div>
+  </div>
+  <div class="card ink" style="margin-top:8px">
+    <h3>The idea we shipped</h3>
+    <p>SitewellEco2 scores every US county with a model you can explain, lets public sentiment move the rank, and lets you trade off economic, social, and ecological value without letting one gain erase harm. Three rooms, one ranking. A globe or a satellite map. Sliders. An Accord radar. A live pulse.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar plum"></div>
+  <p class="kicker">3. Hacker's Canvas</p>
+  <h2>The whole plan on one canvas</h2>
+  <div class="grid3">
+    <div class="card rose">
+      <h3>Problem</h3>
+      <p>Siting tools optimize for cheap power and tax breaks. They miss the two ways projects actually die: the grid queue and the council vote. A high score that hides terrible water or an active moratorium is not insight. It is a trap.</p>
+    </div>
+    <div class="card sand">
+      <h3>What people use today</h3>
+      <p>Utility heatmaps, consultant slide decks, county GIS, and a news search. Some teams train a model on where data centers already are, which mostly rediscovers Dallas, Houston, and Northern Virginia.</p>
+    </div>
+    <div class="card sky">
+      <h3>Who this is for</h3>
+      <p>Site engineers, real estate developers, and digital-infrastructure teams. Later, utilities and counties that want inbound interest shown honestly, not flattered.</p>
+    </div>
+    <div class="card teal">
+      <h3>Who would try it first</h3>
+      <p>Developers who are comparing a shortlist of states right now. Teams that already speak iMasons language: People, Planet, Power, Pushback, Policy.</p>
+    </div>
+    <div class="card lilac">
+      <h3>Why this is different</h3>
+      <p>We do not claim we found the right weights. We show a top ten that stays on top when the weights move. Then you can trade off live, and the rank moves again when the community speaks.</p>
+    </div>
+    <div class="card mint">
+      <h3>In one line</h3>
+      <p>It looks like a siting heatmap, except it scores sustainability in the open and it keeps listening after the shortlist is drawn.</p>
+    </div>
+    <div class="card sand">
+      <h3>What you get</h3>
+      <p>Every US county, seven pillars, hard exclusions, and a combined score that falls if one pillar is weak. Community can move the list. Trade-offs follow the iMasons Accord. Every pulse item links to its source.</p>
+    </div>
+    <div class="card sky">
+      <h3>What we each brought</h3>
+      <p>Riddhi built the product, the React and Mapbox work, the globe, and the FastAPI wiring. Krish built the geospatial features, the scoring, the research files, and the robustness checks. We share the Gemini awareness path and the Social Accord work.</p>
+    </div>
+    <div class="card teal">
+      <h3>How people find it</h3>
+      <p>The live app, the GitHub org <a href="https://github.com/AI-Data-Center-ML-Engine-SkyWalkers">AI-Data-Center-ML-Engine-SkyWalkers</a>, the hackathon demo, and materials that use the same iMasons language the industry already accepted.</p>
+    </div>
+    <div class="card rose">
+      <h3>How we know it is working</h3>
+      <p>How many counties we scored. How much of the top ten survives two thousand random weight sets. How far a site moves after community signals. How much coverage and confidence a county has. Alerts only from official records or established news.</p>
+    </div>
+    <div class="card lilac">
+      <h3>How this could be paid for later</h3>
+      <p>This weekend is about proving the method. Next is a hosted shortlist for a developer team. After that, a watched portfolio and county-level briefings.</p>
+    </div>
+    <div class="card mint">
+      <h3>What it cost us to build</h3>
+      <p>Open government data, time on sixty failed projects, the joins and robustness runs, Gemini summaries, a Mapbox token, and the engineering for the three rooms.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar coral"></div>
+  <p class="kicker">4. Business Model CPR</p>
+  <h2>Who pays, and why we win</h2>
+  <div class="grid3">
+    <div class="card sky">
+      <h3>Industry</h3>
+      <p>Digital infrastructure and data-center real estate. The people who have to put a campus somewhere in the United States.</p>
+    </div>
+    <div class="card teal">
+      <h3>Customer</h3>
+      <p>The person who has to recommend a county and then stand behind it: a site engineer or a real estate developer.</p>
+    </div>
+    <div class="card sand">
+      <h3>Where</h3>
+      <p>The United States. The feature store covers 3,109 counties. The app lets you explore candidates across the country, not one metro.</p>
+    </div>
+    <div class="card lilac">
+      <h3>Position</h3>
+      <p>We sit on top of power-price maps as the sustainability and permission layer. We are not another model that points at wherever the last campus went.</p>
+    </div>
+    <div class="card rose">
+      <h3>Opportunity</h3>
+      <p>Data Center Watch documented $64 billion blocked or delayed through early 2025, and about $156 billion stalled in 2025 alone. The industry already accepted Social Accord language. The gap is a tool that uses both.</p>
+    </div>
+    <div class="card mint">
+      <h3>What only we do here</h3>
+      <p>After a score you can explain, community signals re-rank the list. A confirmed moratorium is zero, not a footnote in appendix C.</p>
+    </div>
+    <div class="card sand">
+      <h3>Who we plug into</h3>
+      <p>The iMasons Social Accord. Public sources such as Open States, LegiScan, the Federal Register, GDELT, and Bluesky. One ranking request between the app and the model, so those two repos can move on their own clocks.</p>
+    </div>
+    <div class="card sky">
+      <h3>How money could work</h3>
+      <p>Near term, score a shortlist for a project. Later, subscribe to a watched set of counties. That is not the hackathon prize. It is the path after the method is real.</p>
+    </div>
+    <div class="card teal">
+      <h3>What we measure</h3>
+      <p>How often a top-ten county survives random weights. Whether known failures look worse on permission. How much community coverage a county has. How fast the rank updates when someone moves a slider.</p>
+    </div>
+    <div class="card lilac">
+      <h3>How we would sell it</h3>
+      <p>Demo the three rooms. Hand a developer their top ten under two stories, carbon first and cost first. Then show a county that falls off the list when a moratorium appears.</p>
+    </div>
+    <div class="card rose">
+      <h3>How we teach it</h3>
+      <p>The architecture diagram and this toolkit. On pulse, every card quotes the sentence the model used, so you can see why a place moved.</p>
+    </div>
+    <div class="card mint">
+      <h3>Why we can do this</h3>
+      <p>We have a working app, not a mockup. The scoring is open. The awareness path is live. The extra pillar exists because we read sixty failed projects and thirty-one moratoria, not because it looked good on a slide.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar navy"></div>
+  <p class="kicker">5. Pitch Like a Pro</p>
+  <h2>Why a site engineer would use this now</h2>
+  <div class="grid3">
+    <div class="card rose">
+      <h3>Desirability</h3>
+      <p>The person in the chair is a site engineer or a real estate developer. They need a place that can get power and a permit, not only a cheap megawatt. We help them pick a county they can stand behind in a board room and in a town hall. They get one shortlist, weights they can move, a view of how the community is shifting, Accord trade-offs, and sources they can click.</p>
+    </div>
+    <div class="card sky">
+      <h3>Feasibility</h3>
+      <p>The core team is Riddhi Raina Prasad and Krish Jani, SkyWalkers. The landscape is consultant GIS, utility maps, and generic site-selection models. None of those combine an open county score, a veto when a pillar collapses, and a live community engine on iMasons terms. We already run FastAPI, React, Mapbox, the globe, Gemini, SQLite, Parquet, and NumPy.</p>
+    </div>
+    <div class="card mint">
+      <h3>Viability</h3>
+      <p>Money comes later, as hosted shortlists and watched portfolios. That is not this weekend's job. Next we put the live model behind the same ranking request, add more official dockets, and go down toward parcels. When we retrain, we bump the model version. Sentiment knobs live in the server settings. Weights live in a config file, so we can change a story without rewriting the app.</p>
+    </div>
+  </div>
+  <div class="card ink" style="margin-top:8px">
+    <h3>The pitch</h3>
+    <p>Most siting tools ask where power is cheap. That is how we over-built Northern Virginia and still cannot interconnect. We asked a harder pair of questions. Can it get built, and should it be built?</p>
+    <p>We scored every US county on seven pillars: power, carbon, water, permission, hazard, land, and co-benefits. Hard rules drop a county that cannot work. A weak pillar pulls the whole score down, so cheap power cannot hide a dead water cycle. Then we keep watching. Legislation, news, and public posts go through Gemini. Those features move the rank. Trade-offs uses the iMasons Social Accord, so a gain in tax revenue cannot erase ecological harm.</p>
+    <p>Open the globe. Move the sliders. Click a point. Read what that county is saying this week.</p>
+    <p><a href="https://github.com/AI-Data-Center-ML-Engine-SkyWalkers">github.com/AI-Data-Center-ML-Engine-SkyWalkers</a></p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar plum"></div>
+  <p class="kicker">6. Competitive landscape</p>
+  <h2>No one else joins the site, the water, and the county</h2>
+  <p class="lede">Consultants score power and write a deck. Utility maps still crown Loudoun. Directories show where campuses already are. Nobody re-ranks a county when a bill or a moratorium appears.</p>
+  <table class="comp">
+    <thead>
+      <tr>
+        <th class="cap">What you need</th>
+        <th class="us">SitewellEco2</th>
+        <th class="them">Cushman &amp; Wakefield</th>
+        <th class="them">JLL site selection</th>
+        <th class="them">A manual consultant</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cap">Power and infrastructure score</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="yes">Yes</span></td>
+      </tr>
+      <tr>
+        <td class="cap">Water, climate, land, and habitat</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="part">Some</span></td>
+        <td><span class="part">Some</span></td>
+        <td><span class="part">Some</span></td>
+      </tr>
+      <tr>
+        <td class="cap">Community pulse from bills, news, and posts</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+      <tr>
+        <td class="cap">One post cannot swing a county</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+      <tr>
+        <td class="cap">On-demand rank for any US county</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+      <tr>
+        <td class="cap">Check against blocked and delayed projects</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="part">Sometimes</span></td>
+      </tr>
+      <tr>
+        <td class="cap">iMasons Accord and a do-no-harm floor</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+      <tr>
+        <td class="cap">Live web workspaces</td>
+        <td class="us"><span class="yes">Yes</span></td>
+        <td><span class="part">A client portal</span></td>
+        <td><span class="part">A client portal</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+      <tr>
+        <td class="cap">How you buy it</td>
+        <td class="us">A working product</td>
+        <td>Often $25k or more per project</td>
+        <td>Often $15k or more per project</td>
+        <td>Often $50k or more per project</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="grid2" style="margin-top:8px">
+    <div class="card sand">
+      <h3>What they do well</h3>
+      <p>Cushman and JLL will fly the county, call the utility, and deliver a careful deck. Utility heatmaps are honest about time to power. Directories tell you where campuses already landed. A manual GIS shop can build any layer you want if you pay for the weeks.</p>
+    </div>
+    <div class="card rose">
+      <h3>What they leave out</h3>
+      <p>They still treat the council vote as a footnote. They do not tie bills and posts to a county and then move the rank. They do not drop a place when water collapses. They do not put iMasons on the same shortlist as the map. By the time the deck is done, the county may already have a moratorium.</p>
+    </div>
+  </div>
+  <div class="card ink" style="margin-top:8px">
+    <h3>The gap we occupy</h3>
+    <p>Score the physics, watch the people, and trade off in the open before capital is committed. That is not another model of where the last campus went.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar navy"></div>
+  <p class="kicker">7. Architecture</p>
+  <h2>Two paths, one rank</h2>
+  <p>A site engineer uses SitewellEco2 in the browser, on React and Mapbox. The app asks FastAPI for a ranking and sends along the slider weights. Ranked sites open in three rooms: the map, the trade-offs, and the pulse.</p>
+  <p>A second path collects public sources, stores them, and lets Gemini read what people and legislatures are saying. Those features come back into FastAPI and move the rank. They also fill Community pulse. The picture below is that whole loop.</p>
+  <p style="margin:8px 0 0"><img class="arch" src="screenshots/architecture.png" alt="SitewellEco2 architecture" /></p>
+</section>
+
+<section class="slide">
+  <div class="bar navy"></div>
+  <p class="kicker">8. Scoring, data, and stack</p>
+  <h2>The engine behind the map</h2>
+  <div class="grid2">
+    <div class="card sky">
+      <h3>How the score is built</h3>
+      <p>This is multi-criteria decision analysis, not a hidden ranker. We drop a county that fails a hard rule: too much protected land, an active moratorium, almost no buildable land, too far from a high-voltage line, extreme flood or hurricane risk, or extreme water stress today and in 2050. Everything else is scaled from 0 to 1 against a fixed physical anchor. A pillar is the average of its features. Defaults: power 22 percent, carbon 18, water 15, permission 15, hazard 10, land 10, co-benefits 10.</p>
+      <div class="eq">S = product of p<sub>i</sub><sup>w<sub>i</sub></sup> from i = 1 to 7</div>
+      <p class="tiny">A weak pillar pulls the whole score down. If any pillar is below 0.15, the county is out.</p>
+      <div class="eq">S' = S · e<sup>0.3 N c</sup> · (1 + 0.1 I) · (1 - 0.3 R) · M</div>
+      <p class="tiny">N is net sentiment, c is confidence, I is incentives, R is restrictions. M is 0 if there is a moratorium, else 1.</p>
+    </div>
+    <div class="card sand">
+      <h3>Research and data</h3>
+      <p>Sixty US projects from 2022 to 2026 were blocked, withdrawn, relocated, or delayed. They die at the grid queue and the council vote, which is why permission is its own pillar.</p>
+      <p>Layers meet at the county. FEMA, BLS, and Census already have a FIPS code. Substations, plants, and brownfields are counted inside the county. Land cover is averaged. Grid regions and basins are blended by area. About thirty-five open datasets become 3,109 counties and about a hundred features. We checked unique FIPS codes and spot-checked Loudoun, Maricopa, Harris, King, and Abilene.</p>
+    </div>
+    <div class="card teal">
+      <h3>What we used, and why</h3>
+      <p>Python does the joins, with pandas and geopandas for tables and shapes, and raster tools for land cover. The finished table is Parquet. NumPy re-scores it when weights change. FastAPI is the door: the app asks for a ranked list and gets one back. React draws the rooms. Mapbox or the globe is the map. SQLite holds the pulse. We shake the weights two thousand times, check that a cheap-power story still finds today's hubs, and check that failed-project counties look worse on permission.</p>
+    </div>
+    <div class="card lilac">
+      <h3>Community sources</h3>
+      <p>We collect first, without AI, then keep only what is about data centers, remove copies, attach a county, and store it. Gemini writes stance, a one-line summary, the place, and any alert. Bills come from Open States, LegiScan, the Federal Register, and Legistar. News comes from GDELT, Media Cloud, Google News, and RSS. Posts come from Bluesky, Reddit, and Mastodon. Official records count more than social posts. One social post never raises an alert. A moratorium has to come from an official or established news source. Every item links back.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="bar plum"></div>
+  <p class="kicker">9. Scale</p>
+  <h2>How this stays cheap as more people use it</h2>
+  <div class="grid2">
+    <div class="card teal">
+      <h3>Do the heavy work once</h3>
+      <p>Joining about thirty-five datasets onto every county is slow, so we do it ahead of time and save a table of 3,109 counties and about a hundred columns. When someone moves a slider, we re-score that table. We do not rebuild the map from rasters. The web server does not keep user state. The app only needs a ranked list back, so today's stand-in model and tomorrow's live model can swap without changing the screens.</p>
+    </div>
+    <div class="card sky">
+      <h3>Three rooms, one shortlist</h3>
+      <p>Site finder, Trade-offs, and Community pulse all read the same ranking. Adding a room does not mean running the model three times. Weights sit in a config file. When we retrain, we change the model version. The knobs that decide how much sentiment moves a site sit in server settings, so we can tune them without rebuilding the county table.</p>
+    </div>
+    <div class="card sand">
+      <h3>Listen a little at a time</h3>
+      <p>Collectors page through public APIs. We save an item first, and we only ask Gemini to read what is new. A keyword filter and de-duplication keep that queue small. Embeddings are for search, not for every rank. A clock can pull new bills and news on a schedule without touching the county scores.</p>
+    </div>
+    <div class="card lilac">
+      <h3>The same pattern, smaller cells later</h3>
+      <p>Today the grain is the county. The same way we join tables, points, rasters, and overlays can later go down to parcels. A new source only has to land in the same clean-up steps: normalize, attach a place, store. SQLite is enough for the hackathon. If the store grows, we can move it without changing what the app asks for.</p>
+    </div>
+    <div class="card rose">
+      <h3>More users, same table</h3>
+      <p>A watched portfolio is a filter on those 3,109 rows, plus alerts for the counties you care about. The two-thousand-weight check runs offline, not when someone opens the map. Official sources weigh more than social posts, so a busy day on Bluesky does not rewrite the rank.</p>
+    </div>
+    <div class="card mint">
+      <h3>What we will not pretend</h3>
+      <p>We do not crawl the web every time someone clicks. We do not rejoin rasters when a slider moves. We do not let one social post raise an alert. The system stays cheap because the county table is already built, the app only asks for a rank, and we only spend AI on what is new.</p>
+    </div>
+  </div>
+  <div class="card ink" style="margin-top:10px">
+    <h3>Team and links</h3>
+    <p>Riddhi Raina Prasad, rrp4822@nyu.edu. Krish Jani, kj2743@nyu.edu.</p>
+    <p><a href="https://github.com/AI-Data-Center-ML-Engine-SkyWalkers">https://github.com/AI-Data-Center-ML-Engine-SkyWalkers</a></p>
+  </div>
+</section>
+
+</body>
+</html>
